@@ -1,0 +1,96 @@
+[
+  {
+    "id": "extension.vector",
+    "label": "Create extension \"vector\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "dependency",
+        "name": "vector"
+      }
+    },
+    "precheck": [
+      {
+        "description": "verify extension \"vector\" is not installed",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_extension\" WHERE \"extname\" = $1) AS \"result\"",
+        "params": [
+          "vector"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "extension \"vector\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create extension \"vector\"",
+        "sql": "CREATE EXTENSION IF NOT EXISTS \"vector\" WITH SCHEMA \"public\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "confirm extension \"vector\" is installed",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_extension\" WHERE \"extname\" = $1) AS \"result\"",
+        "params": [
+          "vector"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "extension \"vector\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.NemotronSvMuestra",
+    "label": "Create table \"NemotronSvMuestra\"",
+    "summary": "Creates table \"NemotronSvMuestra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "NemotronSvMuestra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"NemotronSvMuestra\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"NemotronSvMuestra\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"NemotronSvMuestra\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"NemotronSvMuestra\"",
+        "sql": "CREATE TABLE \"public\".\"NemotronSvMuestra\" (\n  \"departamento\" text NOT NULL,\n  \"edad\" int4 NOT NULL,\n  \"embedding\" vector(768) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"ingreso_estimado_usd\" float8 NOT NULL,\n  \"meta_principal\" text NOT NULL,\n  \"nivel_educativo\" text NOT NULL,\n  \"ocupacion\" text NOT NULL,\n  \"sexo\" text NOT NULL,\n  \"sin_acceso_financiero\" bool NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"NemotronSvMuestra\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"public\".\"NemotronSvMuestra\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"NemotronSvMuestra\""
+        }
+      }
+    ]
+  }
+]
