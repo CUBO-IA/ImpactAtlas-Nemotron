@@ -8,7 +8,7 @@ ImpactAtlas permitirá explorar **la muestra socioeconómica disponible** median
 
 Se reutilizarán PostgreSQL, la tabla y los embeddings existentes. SQL calculará estadísticas exactas sobre los registros filtrados; la búsqueda vectorial encontrará ejemplos semánticamente relacionados, nunca estimará conteos, promedios o porcentajes.
 
-**Equipo:** dos desarrolladores full-stack. **Duración base:** seis sprints de una semana, cinco días laborables por sprint. **Capacidad:** 40 h semanales por persona, de las cuales se comprometen 32 h y se reservan 8 h para imprevistos, revisiones y correcciones. Total: **384 h planificadas + 96 h de reserva = 480 h-persona**. Las integraciones semanales ya están dentro de las 32 h; no se suman dos veces.
+**Equipo:** dos desarrolladores full-stack. El trabajo se organiza en **seis fases sin duración de calendario fija**. Estimación orientativa: **384 h planificadas + 96 h de reserva = 480 h-persona**. Las horas de integración ya están incluidas, no se suman dos veces.
 
 La estimación supone acceso de lectura a PostgreSQL, autorización de uso de los datos, un proveedor LLM aprobado, disponibilidad de un GeoJSON con licencia adecuada y un entorno donde ejecutar Node.js y Chromium. Si una condición falla, se registra el bloqueo y se reestima: no se oculta como trabajo completado.
 
@@ -17,8 +17,8 @@ La estimación supone acceso de lectura a PostgreSQL, autorización de uso de lo
 | Documento | Contenido |
 | --- | --- |
 | [01-arquitectura-y-datos.md](./01-arquitectura-y-datos.md) | Estado observado, arquitectura Mermaid, PostgreSQL, indicadores, vectores, IA y carpetas. |
-| [02-contratos-api.md](./02-contratos-api.md) | Contratos v1, parámetros, respuestas, validaciones, errores y ejemplos. |
-| [03-fases-y-cronograma.md](./03-fases-y-cronograma.md) | Fases, sprints paralelos, dependencias, integración y entregables. |
+| [02-contratos-api.md](./02-contratos-api.md) | Endpoints finales sin versionado, parámetros, respuestas, validaciones, errores y ejemplos. |
+| [03-fases-y-cronograma.md](./03-fases-y-cronograma.md) | Fases, dependencias, integración y entregables. |
 | [04-dev1-frontend.md](./04-dev1-frontend.md) | Issues del desarrollador 1, estimaciones y checklist individual. |
 | [05-dev2-backend-ia.md](./05-dev2-backend-ia.md) | Issues del desarrollador 2, estimaciones y checklist individual. |
 | [06-calidad-despliegue-y-riesgos.md](./06-calidad-despliegue-y-riesgos.md) | Pruebas, aceptación, seguridad, operación, riesgos y checklist de publicación. |
@@ -43,7 +43,7 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 | Área | Responsable principal | Revisión/apoyo |
 | --- | --- | --- |
 | Interfaz, filtros, MapLibre, ECharts y accesibilidad | Dev 1 | Dev 2 revisa semántica de datos. |
-| Contratos compartidos y fixtures | Dev 1 mantiene tipos/fixtures; ambos aprueban | Dev 2 valida entradas/salidas reales. |
+| Contratos compartidos y fixtures | Ambos mantienen los esquemas Zod; Dev 1 prepara fixtures | Dev 2 valida entradas/salidas reales. |
 | PostgreSQL, consultas, validaciones y endpoints | Dev 2 | Dev 1 prueba contratos y experiencia de error. |
 | Herramientas IA, proveedor API, vectores y PDF | Dev 2 | Dev 1 integra bloques y verifica presentación. |
 | Especificación de gráficos reutilizable en PDF | Dev 1 | Dev 2 implementa render del servidor. |
@@ -52,17 +52,17 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 
 ## 5. Inicio inmediato
 
-**Primer día, sin esperar al backend completo:**
+**Al comenzar, sin esperar al backend completo:**
 
 1. Ambos: abrir I-01 y revisar el borrador de [contratos](./02-contratos-api.md). Acordar identificadores, filtros, errores y reglas de indicadores.
 2. Dev 1: iniciar D1-01 con navegación y estados vacíos; preparar fixtures sintéticos, no copiar personas reales al repositorio.
 3. Dev 2: iniciar D2-01 con auditoría de solo lectura; entregar primero tabla/columnas, categorías y mapeo departamental.
-4. Antes de terminar el segundo día: aprobar contrato v1 y ejemplos. Dev 1 continúa con fixtures; Dev 2 implementa el mismo contrato.
+4. Aprobar el contrato y los ejemplos antes de implementar consumidores y endpoints. Dev 1 continúa con fixtures; Dev 2 implementa el mismo contrato.
 5. No ejecutar `db:ingest`, resets, migraciones de inicialización ni escrituras sobre el conjunto para comenzar.
 
 ### Checkpoints globales
 
-- [ ] I-01 — Contratos v1 y definiciones de datos acordados.
+- [ ] I-01 — Contratos y definiciones de datos acordados.
 - [ ] I-02 — Mapa conectado a estadísticas reales.
 - [ ] I-03 — Comparador integrado y compatibilidad vectorial/proveedor comprobada.
 - [ ] I-04 — Chat respaldado por herramientas, sin SQL libre.

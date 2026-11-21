@@ -192,7 +192,7 @@ Límites de ejecución y concurrencia pueden mantenerse como constantes del serv
 | Envío de información sensible al LLM | Media / alto | Agregados/evidencia sanitizada, minimización, aprobación de política de datos. Dev 2. | Proveedor sin garantías aprobadas o campos libres sensibles. |
 | SSRF/HTML no confiable en PDF | Media / alto | Sin URLs/HTML de cliente; plantilla fija, escape y red bloqueada para Chromium. Dev 2. | Render intenta cargar recursos externos. |
 | Memoria/CPU por embedding y Chromium | Media / alto | Modelo caliente compartido, límites de concurrencia, cierre de procesos y medición. Dev 2. | OOM, render lento o pool agotado. |
-| Desacuerdo de contratos/bloqueos entre devs | Media / medio | I-01 temprano, fixtures comunes y corte real a mitad de sprint. Ambos. | UI y endpoint divergen; corregir contrato antes de continuar. |
+| Desacuerdo de contratos/bloqueos entre devs | Media / medio | I-01 temprano, fixtures comunes y corte real durante la fase. Ambos. | UI y endpoint divergen; corregir contrato antes de continuar. |
 | Datos cambian durante la generación de reporte | Media / medio | Snapshot transaccional de lectura y liberación antes de IA/PDF. Dev 2. | Cifras del gráfico no coinciden con el texto del mismo documento. |
 | Cuota/gasto o indisponibilidad del proveedor | Media / alto | Presupuesto, límites, fallbacks honestos y monitoreo existente. Dev 2. | Errores 429/503 o costo fuera de lo aprobado. |
 | Licencia/precisión del GeoJSON | Media / medio | Fuente, licencia y revisión de 14 features/IDs. Dev 1. | Geometrías faltantes o imposibilidad de redistribución. |
@@ -236,4 +236,4 @@ No tratar correlaciones como relaciones causales ni una muestra abundante en un 
 - [ ] Smoke tests contra URL final de las cuatro funciones completados por ambos.
 - [ ] I-06 aprobado: URL, fecha, versión de aplicación/corte y evidencia registradas.
 
-**Go/no-go:** no publicar con fallos de exactitud, exposición de datos, ausencia de una funcionalidad principal o cifras IA sin evidencia. El MVP queda listo al cumplirse los checks, no al agotarse la sexta semana.
+**Go/no-go:** no publicar con fallos de exactitud, exposición de datos, ausencia de una funcionalidad principal o cifras IA sin evidencia. El MVP queda listo al cumplirse los checks, no por alcanzar una fecha.

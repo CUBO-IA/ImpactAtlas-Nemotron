@@ -2,17 +2,17 @@
 
 **Responsable de todos los issues D1:** desarrollador 1. Dev 2 revisa contratos y exactitud de interpretación, sin implementar la misma interfaz.
 
-**Estimación total:** 168 h individuales + 24 h compartidas = **192 h**. Disponibilidad adicional: 48 h de reserva durante seis semanas.
+**Estimación total:** 168 h individuales + 24 h compartidas = **192 h**. Reserva orientativa: 48 h durante las seis fases. En la tabla, S1–S6 identifican las fases 1–6, sin duración semanal.
 
 ## 1. Issues listos para crear
 
-Cada fila proporciona título, prioridad, sprint, duración, dependencias y entregable. Añadir al issue el criterio de aceptación del mismo ID, el contrato relacionado y la definición de cierre del [README](./README.md).
+Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias y entregable. Añadir al issue el criterio de aceptación del mismo ID, el contrato relacionado y la definición de cierre del [README](./README.md).
 
-| ID | Título | Prioridad | Sprint | Duración | Dependencias | Entregable |
+| ID | Título | Prioridad | Fase | Esfuerzo | Dependencias | Entregable |
 | --- | --- | --- | --- | --- | --- | --- |
 | D1-01 | Crear shell de ImpactAtlas y navegación de las cuatro funciones | P1 | S1 | 10 h | Ninguna; shell independiente de API. | Layout, navegación, componentes reutilizados y estados de carga/error/vacío. |
 | D1-02 | Implementar filtros tipados y persistencia en URL | P0 | S1 | 10 h | I-01, D1-01. | Panel de filtros de ingresos/educación/ocupación/metas y estado común. |
-| D1-03 | Materializar contratos v1 y fixtures sintéticos | P0 | S1 | 8 h | I-01. | Tipos, cliente `fetch` mínimo y fixtures de éxito/vacío/supresión/error/chat/PDF. |
+| D1-03 | Integrar esquemas compartidos y fixtures sintéticos | P0 | S1 | 8 h | I-01. | Consumir esquemas Zod compartidos, cliente `fetch` mínimo y fixtures de éxito/vacío/supresión/error/chat/PDF. |
 | D1-04 | Integrar GeoJSON de 14 departamentos y mapa MapLibre | P1 | S2 | 14 h | D1-01, D1-03; mapeo inicial D2-01. | Geometría licenciada, selección, coropleta, leyenda y alternativa textual. |
 | D1-05 | Crear panel departamental y gráficos ECharts | P1 | S2 | 10 h | D1-02, D1-03; contrato de estadísticas. | Tarjetas y distribuciones educativas/laborales/metas conectadas al mismo filtro. |
 | D1-06 | Verificar mapa, filtros y cambios rápidos de selección | P0 | S2 | 4 h | D1-04, D1-05, D2-05. | Regresión de recorrido mapa/detalle, vacíos y respuestas fuera de orden. |
@@ -31,7 +31,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 
 ## 2. Criterios de aceptación por issue
 
-### Sprint 1 — 28 h + I-01
+### Fase 1 — 28 h + I-01
 
 **D1-01**
 
@@ -47,11 +47,11 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 
 **D1-03**
 
-- Tipos/fixtures cubren todas las respuestas v1 y una muestra insuficiente, sin usar microdatos reales.
+- Tipos/fixtures cubren todas las respuestas y una muestra insuficiente, sin usar microdatos reales.
 - Hay un mecanismo de desarrollo explícito para fixtures, deshabilitado en producción.
 - Dev 2 acepta los ejemplos antes de implementarlos; no se requieren endpoints para dibujar las vistas.
 
-### Sprint 2 — 28 h + I-02
+### Fase 2 — 28 h + I-02
 
 **D1-04**
 
@@ -71,7 +71,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 - Simular respuesta anterior tardía no reemplaza datos de la selección actual.
 - Error recuperable no borra silenciosamente los filtros de la persona.
 
-### Sprint 3 — 28 h + I-03
+### Fase 3 — 28 h + I-03
 
 **D1-07**
 
@@ -90,7 +90,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 - Un recorrido verifica dos departamentos con filtros y cambio de referencia.
 - Cifras coinciden con el servicio común y se distinguen cero, sin datos y muestra insuficiente.
 
-### Sprint 4 — 28 h + I-04
+### Fase 4 — 28 h + I-04
 
 **D1-10**
 
@@ -110,7 +110,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 - El texto no presenta semántica como conteo nacional ni causalidad.
 - Se verifica al menos un contenido malicioso y un resultado sin evidencia con fixtures.
 
-### Sprint 5 — 28 h + I-05
+### Fase 5 — 28 h + I-05
 
 **D1-13**
 
@@ -123,7 +123,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 
 - Mismo `ChartSpec` y etiquetas/unidades en navegador y servidor.
 - No funciones/HTML/URLs externos en el contrato de gráficos.
-- Entregar el primer gráfico SSR al inicio del sprint; probar que puede renderizarse sin `window`/`document`.
+- Entregar el primer gráfico SSR al inicio de la fase; probar que puede renderizarse sin `window`/`document`.
 
 **D1-15**
 
@@ -131,7 +131,7 @@ Cada fila proporciona título, prioridad, sprint, duración, dependencias y entr
 - Revisar saltos de página, acentos, tablas largas, valores nulos y fuentes/advertencias.
 - Datos del PDF corresponden a su propio snapshot y configuración; no comparar a ciegas consultas hechas en momentos diferentes.
 
-### Sprint 6 — 28 h + I-06
+### Fase 6 — 28 h + I-06
 
 **D1-16**
 

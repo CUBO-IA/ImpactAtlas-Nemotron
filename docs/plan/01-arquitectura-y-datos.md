@@ -28,7 +28,7 @@ flowchart TD
     GEO["GeoJSON local: 14 departamentos"] --> MAP["MapLibre en navegador"]
     UI --> MAP
     UI --> CH["ECharts en navegador"]
-    UI --> API["Route Handlers v1: validación y límites"]
+    UI --> API["Route Handlers: validación y límites"]
     API --> ST["Servicio de estadísticas / consultas parametrizadas"]
     API --> AG["Orquestador IA con herramientas permitidas"]
     AG --> LLM["LLM por API: intención y redacción"]
@@ -127,7 +127,7 @@ No se presupone un HNSW/IVFFlat existente ni se agenda crear uno por defecto.
 | `meta_principal` | Filtro exacto y distribución | Distinguir categoría observada de intención inferida semánticamente. |
 | `embedding` | Recuperación semántica | No contiene por sí mismo una etiqueta estadística verificada. |
 
-### Indicadores v1
+### Indicadores
 
 | ID | Cálculo SQL conceptual | Unidad / denominador |
 | --- | --- | --- |
@@ -200,7 +200,7 @@ Herramientas internas, no endpoints públicos de SQL o vectores:
 
 | Herramienta | Argumentos permitidos | Salida |
 | --- | --- | --- |
-| `get_statistics` | Filtros, agrupación y métricas del contrato v1 | Agregados, tamaños publicables, referencia y advertencias. |
+| `get_statistics` | Filtros, agrupación y métricas del contrato | Agregados, tamaños publicables, referencia y advertencias. |
 | `compare_departments` | Entre 2 y 14 IDs, filtros y métricas permitidos | Comparación determinista y referencia explícita. |
 | `search_semantic_evidence` | Texto, filtros, `topK` acotado | Evidencia semántica sanitizada y advertencia de no representatividad. |
 
@@ -230,7 +230,7 @@ app/
   comparar/page.tsx
   chat/page.tsx
   reportes/page.tsx
-  api/v1/
+  api/
     catalog/route.ts
     statistics/route.ts
     compare/route.ts
@@ -246,7 +246,7 @@ components/
   chat/
   reports/
 src/
-  contracts/                       # tipos v1 y fixtures sintéticos; Dev 1
+  contracts/                       # esquemas Zod compartidos y fixtures sintéticos
   db/
     db.ts                          # existente; Dev 2
     contract.*                     # existentes, conservar
@@ -274,10 +274,10 @@ tests/                             # casos de alto valor, sin replicar suites
 docs/
   plan/                            # este plan
   data-audit.md                     # resultado futuro D2-01
-  operations.md                     # resultado futuro sprint 6
+  operations.md                     # resultado futuro fase 6
 ```
 
-Crear archivos solo cuando exista su primera implementación. `src/contracts` no importa módulos de servidor. Los servicios no dependen de componentes React. El antiguo `/api/chat` debe retirarse o adaptarse al mismo servicio seguro; no dejar el chat local sin controles como vía alternativa.
+Crear archivos solo cuando exista su primera implementación. `src/contracts` no importa módulos de servidor. Los servicios no dependen de componentes React. El actual `/api/chat` debe adaptarse al contrato final y al servicio seguro; no dejar el chat local sin controles como vía alternativa.
 
 ## 8. Referencias y verificaciones pendientes
 

@@ -1,20 +1,32 @@
-# 02 — Contratos de API v1
+# 02 — Contratos de API
 
-> Borrador ejecutable para I-01. Debe aprobarse antes de la implementación independiente de consumidores y endpoints. Los ejemplos son **sintéticos**; no describen resultados reales de El Salvador.
+> Contrato objetivo para I-01. Las rutas descritas aún no están implementadas salvo el chat anterior, cuyo protocolo es distinto. Los ejemplos son **sintéticos**. Los esquemas compartidos están organizados por funcionalidad en `src/contracts/` y se reexportan desde `src/contracts/index.ts`; las categorías existentes deben verificarse en servidor contra el catálogo auditado.
 
 ## 1. Decisiones comunes
 
-- Base `/api/v1`; JSON UTF-8 salvo PDF y GeoJSON.
+| Método | Ruta final | Parámetros de URL/query | Cuerpo | Respuesta |
+| --- | --- | --- | --- | --- |
+| GET | `/api/catalog` | Ninguno | Ninguno | JSON `ApiResponse<Catalog>` |
+| POST | `/api/statistics` | Ninguno | `StatisticsRequest` | JSON `ApiResponse<StatisticsData>` |
+| POST | `/api/compare` | Ninguno | `CompareRequest` | JSON `ApiResponse<CompareData>` |
+| POST | `/api/chat` | Ninguno | `ChatRequest` | JSON `ApiResponse<ChatData>` |
+| POST | `/api/reports/pdf` | Ninguno | `ReportRequest` | Binario PDF; errores JSON |
+| GET | `/api/health` | Ninguno | Ninguno | JSON con `status` |
+
+Ninguna ruta admite parámetros de ruta o query. Los POST reciben `Content-Type: application/json`. `GET /geo/sv-departamentos.geojson` es un asset público, no un endpoint de API. La ruta `/api/chat` existente utiliza otro cuerpo y streaming: se reemplazará por este contrato, no debe tratarse como ya compatible.
+
+- Base `/api`, sin versionado en la URL; JSON UTF-8 salvo PDF y GeoJSON.
 - POST para consultas con filtros complejos, aunque sean operaciones de lectura.
 - Solo tres agrupaciones categóricas y una territorial, sin `groupBy` arbitrario ni SQL público.
-- Contrato TypeScript y fixtures en `src/contracts/`; validación de runtime en servidor. Un tipo TS no sustituye la validación.
-- Dev 1 mantiene tipos/fixtures; Dev 2 valida contra ellos. Cambios incompatibles requieren acuerdo de ambos antes de merge.
+- Esquemas Zod y tipos inferidos en `src/contracts/`, compartidos por cliente y servidor; el servidor debe validar cada entrada y las categorías contra el catálogo.
+- Los esquemas comprueban forma y límites estructurales; no reemplazan la validación del catálogo ni las reglas de privacidad, evidencia y autorización en servidor. Ninguna ruta nueva se implementa por definir su esquema.
+- Ambos mantienen los esquemas compartidos; Dev 1 prepara fixtures y Dev 2 valida entradas y salidas reales. Cambios incompatibles requieren acuerdo de ambos antes de merge.
 - Respuestas analíticas y de IA: `Cache-Control: no-store` inicialmente.
 - No exponer registros individuales, vectores, prompts internos ni errores de PostgreSQL.
 
 ## 2. Tipos compartidos
 
-Especificación de datos, no código ya implementado:
+La siguiente especificación describe el contrato; los esquemas Zod compartidos son la definición ejecutable de su forma.
 
 ```ts
 type DepartmentId =
@@ -77,7 +89,7 @@ IDs de educación, ocupación y meta se publican en catálogo y se mapean a valo
 
 ## 3. Catálogo y geometría
 
-### `GET /api/v1/catalog`
+### `GET /api/catalog`
 
 Sin parámetros. Devuelve catálogos estáticos/auditados suficientes para trabajar sin descargar filas:
 
@@ -117,7 +129,7 @@ La geometría se versiona con fuente/licencia en documentación. Sin necesidad d
 
 ## 4. Estadísticas para mapa y detalle
 
-### `POST /api/v1/statistics`
+### `POST /api/statistics`
 
 ```ts
 type StatisticsRequest = {
@@ -230,7 +242,7 @@ Panel de detalle: una consulta territorial para tarjetas y hasta tres consultas 
 
 ## 5. Comparación
 
-### `POST /api/v1/compare`
+### `POST /api/compare`
 
 ```ts
 type CompareRequest = {
@@ -286,7 +298,7 @@ Salida `ApiResponse<CompareData>`. Con la misma fixture del ejemplo anterior, Sa
 
 ## 6. Chat respaldado por evidencia
 
-### `POST /api/v1/chat`
+### `POST /api/chat`
 
 MVP con respuesta JSON completa; no se exige streaming. Evita mantener dos protocolos mientras se validan fuentes y resultados.
 
@@ -390,7 +402,7 @@ Los fixtures de I-01 deben añadir un caso respondido con tabla/gráfico, uno si
 
 ## 7. Reportes PDF
 
-### `POST /api/v1/reports/pdf`
+### `POST /api/reports/pdf`
 
 ```ts
 type ReportRequest = {
@@ -403,6 +415,16 @@ type ReportRequest = {
     | "summary" | "education" | "occupation" | "goals" | "ai_analysis"
   )[]; // 1–5, únicas
 };
+```
+
+Ejemplo de cuerpo:
+
+```json
+{
+  "filters": { "departmentIds": ["santa-ana"], "income": { "min": 200 } },
+  "indicators": ["sample_count", "income_mean"],
+  "sections": ["summary", "education", "ai_analysis"]
+}
 ```
 
 Departamentos seleccionados en `filters.departmentIds`: 1–14 si se incluyen. El informe siempre incluye título automático, fecha de generación, versión/fuente, filtros, denominadores, advertencias y limitaciones; esas partes no pueden desactivarse.
@@ -428,7 +450,7 @@ X-Request-Id: <identificador>
 
 ## 8. Salud y errores
 
-### `GET /api/v1/health`
+### `GET /api/health`
 
 `200 {"status":"ok"}` si aplicación y consulta mínima de lectura a BD funcionan; `503 {"status":"unavailable"}` en caso contrario. Timeout corto. No exponer host, versión, SQL, secretos ni conteo de registros. El proveedor LLM se comprueba durante smoke tests, no en cada health check.
 
