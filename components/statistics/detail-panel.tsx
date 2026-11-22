@@ -75,7 +75,7 @@ export function DetailPanel({
   });
 
   return (
-    <div className="glass-surface hud-bracket rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col gap-6 transition-all duration-300">
+    <div className="glass-surface hud-bracket rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-5">
       {/* Panel Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-200/60">
         <div>
@@ -116,92 +116,15 @@ export function DetailPanel({
         </div>
       </div>
 
-      {/* 4 KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {/* Card 1: Sample Size */}
-        <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Muestra (n)</span>
-            <Users className="size-4 text-[#002b7f]" />
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
-            {loading ? (
-              <span className="inline-block w-16 h-6 bg-zinc-200 rounded animate-pulse" />
-            ) : isSuppressed ? (
-              <span className="text-sm font-semibold text-zinc-400">Suprimido</span>
-            ) : (
-              sampleCount === null ? "No disponible" : sampleCount.toLocaleString()
-            )}
-          </div>
-          <div className="text-[10px] text-zinc-400 mt-1">Perfiles analizados</div>
-        </div>
-
-        {/* Card 2: Income Mean */}
-        <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Ingreso Medio</span>
-            <DollarSign className="size-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
-            {loading ? (
-              <span className="inline-block w-16 h-6 bg-zinc-200 rounded animate-pulse" />
-            ) : incomeMean !== null && incomeMean !== undefined ? (
-              `$${incomeMean.toFixed(0)}`
-            ) : (
-              "—"
-            )}
-          </div>
-          <div className="text-[10px] text-zinc-400 mt-1">USD estimados</div>
-        </div>
-
-        {/* Card 3: Income Median */}
-        <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">Ingreso Mediano</span>
-            <DollarSign className="size-4 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold text-zinc-950">
-            {loading ? (
-              <span className="inline-block w-16 h-6 bg-zinc-200 rounded animate-pulse" />
-            ) : incomeMedian !== null && incomeMedian !== undefined ? (
-              `$${incomeMedian.toFixed(0)}`
-            ) : (
-              "—"
-            )}
-          </div>
-          <div className="text-[10px] text-zinc-400 mt-1">Percentil 50</div>
-        </div>
-
-        {/* Card 4: Financial Exclusion */}
-        <div className="rounded-2xl border border-zinc-100 bg-orange-50/50 p-4">
-          <div className="flex items-center justify-between text-orange-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-orange-700">Sin Acceso Fin.</span>
-            <TrendingUp className="size-4 text-[#ff6a00]" />
-          </div>
-          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
-            {loading ? (
-              <span className="inline-block w-16 h-7 bg-zinc-200 rounded animate-pulse" />
-            ) : isSuppressed ? (
-              <span className="text-xs font-sans text-zinc-400 italic">Suprimido</span>
-            ) : typeof exclusionPct === "number" ? (
-              `${exclusionPct.toFixed(1)}%`
-            ) : (
-              "—"
-            )}
-          </div>
-          <p className="text-[10px] text-zinc-500 mt-1.5">
-            Población sin cuenta bancaria ni servicios formales
-          </p>
-        </div>
-
-        {/* KPI 2: Ingreso Promedio */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-200/70 bg-gradient-to-b from-blue-50/40 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
-          <div className="h-1 w-full bg-gradient-to-r from-[#002b7f] to-blue-400 absolute top-0 left-0" />
+      {/* Resumen de indicadores */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="relative overflow-hidden rounded-xl border border-blue-200/70 bg-blue-50/30 p-4">
+          <div className="h-1 w-full bg-[#002b7f] absolute top-0 left-0" />
           <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-blue-950">Ingreso Medio</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-950">Ingreso medio</span>
             <DollarSign className="size-4 text-[#002b7f]" />
           </div>
-          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+          <div className="font-mono text-2xl font-bold text-zinc-950 tracking-tight">
             {loading ? (
               <span className="inline-block w-20 h-7 bg-zinc-200 rounded animate-pulse" />
             ) : typeof incomeMean === "number" ? (
@@ -211,18 +134,17 @@ export function DetailPanel({
             )}
           </div>
           <p className="text-[10px] text-zinc-500 mt-1.5">
-            Media estimada en dólares USD
+            Promedio estimado · USD
           </p>
         </div>
 
-        {/* KPI 3: Ingreso Mediano */}
-        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-zinc-50/50 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
-          <div className="h-1 w-full bg-gradient-to-r from-zinc-500 to-zinc-400 absolute top-0 left-0" />
+        <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
+          <div className="h-1 w-full bg-zinc-400 absolute top-0 left-0" />
           <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-700">Ingreso Mediano</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-700">Ingreso mediano</span>
             <DollarSign className="size-4 text-zinc-600" />
           </div>
-          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+          <div className="font-mono text-2xl font-bold text-zinc-950 tracking-tight">
             {loading ? (
               <span className="inline-block w-20 h-7 bg-zinc-200 rounded animate-pulse" />
             ) : typeof incomeMedian === "number" ? (
@@ -232,20 +154,21 @@ export function DetailPanel({
             )}
           </div>
           <p className="text-[10px] text-zinc-500 mt-1.5">
-            Percentil 50 libre de valores atípicos
+            Percentil 50 · USD
           </p>
         </div>
 
-        {/* KPI 4: Muestra */}
-        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-zinc-50/50 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
-          <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-400 absolute top-0 left-0" />
+        <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/30 p-4">
+          <div className="h-1 w-full bg-emerald-500 absolute top-0 left-0" />
           <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-700">Muestra Activa</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-700">Muestra activa</span>
             <Users className="size-4 text-emerald-600" />
           </div>
-          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+          <div className="font-mono text-2xl font-bold text-zinc-950 tracking-tight">
             {loading ? (
               <span className="inline-block w-16 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : isSuppressed ? (
+              <span className="text-sm font-sans text-zinc-400">Suprimida</span>
             ) : typeof sampleCount === "number" ? (
               sampleCount.toLocaleString()
             ) : (
@@ -253,13 +176,35 @@ export function DetailPanel({
             )}
           </div>
           <p className="text-[10px] text-zinc-500 mt-1.5">
-            Observaciones analizadas en esta cohorte
+            Perfiles analizados
+          </p>
+        </div>
+
+        <div className="relative overflow-hidden rounded-xl border border-orange-200 bg-orange-50/40 p-4">
+          <div className="h-1 w-full bg-[#ff6a00] absolute top-0 left-0" />
+          <div className="flex items-center justify-between text-xs text-orange-700 mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide">Sin acceso financiero</span>
+            <TrendingUp className="size-4 text-[#ff6a00]" />
+          </div>
+          <div className="font-mono text-2xl font-bold text-zinc-950 tracking-tight">
+            {loading ? (
+              <span className="inline-block w-16 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : isSuppressed ? (
+              <span className="text-xs font-sans text-zinc-400">Suprimido</span>
+            ) : typeof exclusionPct === "number" ? (
+              `${exclusionPct.toFixed(1)}%`
+            ) : (
+              "—"
+            )}
+          </div>
+          <p className="text-[10px] text-zinc-500 mt-1.5">
+            Sin cuenta bancaria ni servicios formales
           </p>
         </div>
       </div>
 
       {/* Categorical Distribution Section */}
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4 border-t border-zinc-200 pt-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h4 className="text-sm font-extrabold text-zinc-950">Distribución Socioeconómica</h4>

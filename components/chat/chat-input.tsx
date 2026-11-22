@@ -7,16 +7,17 @@ interface ChatInputProps {
   onSendMessage: (question: string) => void;
   onCancel: () => void;
   loading: boolean;
+  showSuggestions: boolean;
 }
 
-export function ChatInput({ onSendMessage, onCancel, loading }: ChatInputProps) {
+export function ChatInput({ onSendMessage, onCancel, loading, showSuggestions }: ChatInputProps) {
   const [text, setText] = useState("");
 
   const presets = [
     "¿Cómo se comparan los ingresos entre Santa Ana y San Salvador?",
     "¿Qué metas aparecen en los datos disponibles?",
-    "¿Qué departamentos tienen las mayores tasas de exclusión financiera?",
-    "Ver distribución por nivel educativo y porcentaje",
+    "¿Cuál es el porcentaje sin acceso financiero en Santa Ana?",
+    "¿Cuál es la distribución por nivel educativo?",
   ];
 
   function handleSubmit(e?: React.FormEvent) {
@@ -41,8 +42,7 @@ export function ChatInput({ onSendMessage, onCancel, loading }: ChatInputProps) 
 
   return (
     <div className="space-y-3">
-      {/* Suggestions Pills with Hover Glow */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      {showSuggestions && <div className="flex flex-wrap items-center gap-1.5">
         <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase text-zinc-500 mr-1">
           <Sparkles className="size-3 text-[#ff6a00]" />
           Sugerencias:
@@ -58,7 +58,7 @@ export function ChatInput({ onSendMessage, onCancel, loading }: ChatInputProps) 
             {preset}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Input Box - Futuristic Capsule */}
       <form
@@ -66,11 +66,12 @@ export function ChatInput({ onSendMessage, onCancel, loading }: ChatInputProps) 
         className="glass-surface hud-bracket relative rounded-3xl p-3 shadow-md focus-within:border-[#002b7f] focus-within:ring-2 focus-within:ring-[#002b7f]/15 transition-all duration-300"
       >
         <textarea
+          aria-label="Tu consulta"
           rows={2}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escribe tu consulta analítica sobre ingresos, brechas territoriales, metas o exclusión..."
+          placeholder="Pregunta por un indicador o departamento..."
           disabled={loading}
           maxLength={2000}
           className="w-full resize-none border-0 bg-transparent px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-0 leading-relaxed"

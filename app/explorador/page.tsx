@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/navigation/site-footer";
@@ -9,7 +8,6 @@ import { SvChoroplethMap, type ActiveMapMetric } from "@/components/map/sv-choro
 import { FilterBar } from "@/components/filters/filter-bar";
 import { DetailPanel } from "@/components/statistics/detail-panel";
 import { DepartmentTable } from "@/components/map/department-table";
-import { filterSearchParams } from "@/src/lib/filter-url";
 import type { DepartmentId, Filters, MetricValue } from "@/src/contracts/common";
 import {
   LineChart,
@@ -212,43 +210,10 @@ function ExploradorContent({ query }: { query: string }) {
   const currentDeptMetrics = selectedDepartment
     ? departmentData.get(selectedDepartment)
     : undefined;
-  const compareParams = filterSearchParams(filters);
-  const chatParams = filterSearchParams(filters);
-  if (selectedDepartment) chatParams.set("depts", selectedDepartment);
-  const chatHref = `/chat${chatParams.size ? `?${chatParams.toString()}` : ""}`;
-  const reportHref = `/reportes${chatParams.size ? `?${chatParams.toString()}` : ""}`;
-  const explorerParams = filterSearchParams(filters);
-  if (selectedDepartment) explorerParams.set("dept", selectedDepartment);
-  const explorerHref = `/explorador${explorerParams.size ? `?${explorerParams.toString()}` : ""}`;
-  const comparisonDepartments = selectedDepartment
-    ? [selectedDepartment, selectedDepartment === "san-salvador" ? "santa-ana" : "san-salvador"]
-    : ["san-salvador", "santa-ana"];
-  compareParams.set("depts", comparisonDepartments.join(","));
-  compareParams.set("ref", selectedDepartment ?? "san-salvador");
-  const compareHref = `/comparador?${compareParams.toString()}`;
-
   return (
     <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative">
       {/* Futuristic Site Header */}
       <SiteHeader />
-
-          <nav className="hidden items-center gap-8 text-sm font-medium text-zinc-600 md:flex">
-            <Link
-              href={explorerHref}
-              className="font-bold text-[#002b7f] border-b-2 border-[#002b7f] pb-1"
-            >
-              Explorador y Mapa
-            </Link>
-            <Link href={compareHref} className="transition-colors hover:text-[#002b7f]">
-              Comparador
-            </Link>
-            <Link href={chatHref} className="transition-colors hover:text-[#002b7f]">
-              Asistente IA
-            </Link>
-            <Link href={reportHref} className="transition-colors hover:text-[#002b7f]">
-              Reportes PDF
-            </Link>
-          </nav>
 
       <main className="relative flex-1 mx-auto w-full max-w-7xl px-6 sm:px-8 py-8 space-y-6">
         <div className="absolute inset-0 bg-tech-grid opacity-30 pointer-events-none" />
@@ -310,6 +275,7 @@ function ExploradorContent({ query }: { query: string }) {
           onChangeFilters={handleFilterChange}
           sampleSize={sampleSize}
           loading={loading}
+          incomeDebounceMs={300}
         />
 
         {/* 2-Column Responsive Workspace */}

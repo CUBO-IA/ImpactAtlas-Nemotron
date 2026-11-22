@@ -15,7 +15,7 @@ const validPlan = {
   }],
 };
 
-test("envía una solicitud acotada al modelo local y valida el plan generado", async () => {
+test("envía historial acotado y filtros en mensajes, y valida el plan generado", async () => {
   let request;
   const model = {};
   const provider = createLocalChatProvider({
@@ -30,19 +30,29 @@ test("envía una solicitud acotada al modelo local y valida el plan generado", a
     },
   });
 
+  const history = Array.from({ length: 8 }, (_, index) => ({
+    role: index % 2 ? "assistant" : "user",
+    text: `mensaje-${index}`,
+  }));
   const plan = await provider.plan({
     question: "¿Cuál es el ingreso promedio?",
-    history: [{ role: "user", text: "historial que no se envía" }],
+    history,
     filters: { departmentIds: ["santa-ana"] },
   });
 
-  assert.match(request.prompt, /¿Cuál es el ingreso promedio\?/);
+  const sent = request.messages.map(({ content }) => content).join("\n");
+  assert.doesNotMatch(sent, /mensaje-[01]\b/);
+  for (const index of [2, 3, 4, 5, 6, 7]) {
+    assert.match(sent, new RegExp(`mensaje-${index}\\b`));
+  }
+  assert.match(sent, /santa-ana/);
+  assert.match(sent, /¿Cuál es el ingreso promedio\?/);
+  assert.deepEqual(Object.keys(request.tools), ["get_statistics"]);
   assert.equal(request.model, model);
   assert.equal(request.temperature, 0.1);
   assert.equal(request.maxOutputTokens, 256);
   assert.equal(request.maxRetries, 0);
   assert.equal(request.abortSignal instanceof AbortSignal, true);
-  assert.doesNotMatch(request.system, /historial que no se envía|santa-ana/);
   assert.deepEqual(plan, validPlan);
   assert.equal(env.allowRemoteModels, false);
 });
@@ -100,6 +110,8 @@ test("usa búsqueda semántica solo para similitud explícita", async () => {
   });
   await provider.plan({ question: "¿Qué categorías similares a técnico aparecen en la muestra?" });
   assert.deepEqual(availableTools, ["search_semantic_evidence"]);
+  await provider.plan({ question: "Explora los ingresos promedio de Santa Ana" });
+  assert.deepEqual(availableTools, ["get_statistics"]);
 });
 
 test("descarta desgloses fuera del catálogo sin perder una comparación válida", async () => {

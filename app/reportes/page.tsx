@@ -44,15 +44,13 @@ function ReportesContent() {
   return (
     <div className="relative flex min-h-screen flex-col bg-white font-sans text-zinc-900 selection:bg-[#ff6a00] selection:text-white">
       <SiteHeader />
-      <main className="relative mx-auto w-full max-w-5xl flex-1 space-y-6 px-6 py-8 sm:px-8">
+      <main className="relative mx-auto w-full max-w-6xl flex-1 space-y-8 px-5 py-8 sm:px-8 sm:py-12">
         <div className="pointer-events-none absolute inset-0 bg-tech-dots opacity-30" />
-        <header className="relative border-b border-zinc-200/60 pb-5">
-          <div className="mb-1.5 inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-orange-50/70 px-3.5 py-1 text-xs font-semibold text-[#ff6a00] shadow-2xs">
-            <span className="font-mono text-[11px] uppercase tracking-wide">Generación de reportes PDF</span>
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">Generador de Reportes Ejecutivos</h1>
-          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-zinc-600 sm:text-sm">
-            Configura indicadores, filtros y secciones. Ingresos estimados; la muestra no necesariamente representa a El Salvador.
+        <header className="relative border-b border-zinc-200 pb-7">
+          <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-[#002b7f]">ImpactAtlas / Reportes</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl">Datos listos para compartir.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-600 sm:text-base">
+            Crea un reporte PDF con los filtros, indicadores y secciones que necesitas. La muestra no necesariamente representa a El Salvador.
           </p>
         </header>
         <ReportConfigurator filters={filters} onChangeFilters={setFilters} />

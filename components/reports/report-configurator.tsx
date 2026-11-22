@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckSquare, Download, Loader2, Square } from "lucide-react";
+import { AlertTriangle, CheckSquare, Download, FileText, Loader2, RotateCcw, Square } from "lucide-react";
 import { departmentIdSchema, type Filters } from "@/src/contracts/common";
 import type { CatalogResponse } from "@/src/contracts/catalog";
 import type { ReportRequest } from "@/src/contracts/reports";
@@ -20,6 +20,11 @@ export function ReportConfigurator({ filters, onChangeFilters }: { filters: Filt
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const invalidIncome = (filters.income?.min !== undefined && (!Number.isFinite(filters.income.min) || filters.income.min < 0))
+    || (filters.income?.max !== undefined && (!Number.isFinite(filters.income.max) || filters.income.max < 0))
+    || (filters.income?.min !== undefined && filters.income?.max !== undefined && filters.income.min > filters.income.max);
+  const activeFilters = (filters.departmentIds?.length ?? 0) + (filters.educationIds?.length ?? 0)
+    + (filters.occupationIds?.length ?? 0) + (filters.goalIds?.length ?? 0) + (filters.income ? 1 : 0);
 
   useEffect(() => {
     const request = new AbortController();
@@ -73,37 +78,56 @@ export function ReportConfigurator({ filters, onChangeFilters }: { filters: Filt
     }
   }
 
-  return <section className="space-y-6">
-    <div className="glass-surface hud-bracket rounded-3xl p-6 shadow-sm">
-      <div className="mb-4 border-b border-zinc-200/60 pb-3">
-        <span className="flex size-2 rounded-full bg-[#002b7f]" />
-        <h2 className="text-sm font-extrabold text-zinc-950">Filtros del reporte</h2>
-        <p className="text-[11px] text-zinc-500">Persisten en la URL y se aplican a los datos disponibles.</p>
+  return <section className="relative space-y-6">
+    <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 pb-5">
+        <div>
+          <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-widest text-[#002b7f]">01 / Alcance</p>
+          <h2 className="text-lg font-bold text-zinc-950">¿Qué datos quieres incluir?</h2>
+          <p className="mt-1 text-sm text-zinc-500">Sin filtros se utiliza toda la muestra disponible.</p>
+        </div>
+        <button type="button" onClick={() => onChangeFilters({})} disabled={!activeFilters} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-[#002b7f] disabled:opacity-40">
+          <RotateCcw className="size-3.5" /> Limpiar filtros {activeFilters > 0 && `(${activeFilters})`}
+        </button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-semibold">Departamentos
-          <select multiple value={filters.departmentIds ?? []} onChange={(e) => {
-            const ids = Array.from(e.target.selectedOptions, (option) => option.value).filter((id) => departmentIdSchema.safeParse(id).success) as NonNullable<Filters["departmentIds"]>;
-            onChangeFilters({ ...filters, departmentIds: ids.length ? ids : undefined });
-          }} className="mt-1 block min-h-28 w-full rounded-xl border border-zinc-200 bg-white p-2 font-normal">
-            {(catalog?.departments ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-        </label>
-        {([ ["Educación", "educationIds", catalog?.education, "Todos"], ["Ocupación", "occupationIds", catalog?.occupations, "Todas"], ["Meta", "goalIds", catalog?.goals, "Todas"] ] as const).map(([label, key, options, empty]) => <label key={key} className="text-xs font-semibold">{label}
-          <select value={filters[key]?.[0] ?? ""} onChange={(e) => onChangeFilters({ ...filters, [key]: e.target.value ? [e.target.value] : undefined })} className="mt-1 block w-full rounded-xl border border-zinc-200 bg-white p-2 font-normal">
-            <option value="">{empty}</option>{(options ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-        </label>)}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <fieldset className="sm:col-span-2">
+          <legend className="text-sm font-semibold">Departamentos <span className="font-normal text-zinc-500">· {filters.departmentIds?.length ? `${filters.departmentIds.length} seleccionados` : "Todos"}</span></legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(catalog?.departments ?? []).map((item) => <label key={item.id} className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#002b7f] ${filters.departmentIds?.includes(item.id as NonNullable<Filters["departmentIds"]>[number]) ? "border-[#002b7f] bg-blue-50 text-[#002b7f]" : "border-zinc-200 text-zinc-600 hover:border-blue-300"}`}>
+              <input type="checkbox" className="sr-only" checked={filters.departmentIds?.includes(item.id as NonNullable<Filters["departmentIds"]>[number]) ?? false} onChange={(e) => {
+                if (!departmentIdSchema.safeParse(item.id).success) return;
+                const id = item.id as NonNullable<Filters["departmentIds"]>[number];
+                const ids = e.target.checked ? [...(filters.departmentIds ?? []), id] : (filters.departmentIds ?? []).filter((value) => value !== id);
+                onChangeFilters({ ...filters, departmentIds: ids.length ? ids : undefined });
+              }} />{item.label}
+            </label>)}
+            {!catalog && <span className="text-sm text-zinc-500">Cargando departamentos…</span>}
+          </div>
+        </fieldset>
+        {([ ["Educación", "educationIds", catalog?.education], ["Ocupación", "occupationIds", catalog?.occupations], ["Meta", "goalIds", catalog?.goals] ] as const).map(([label, key, options]) => <details key={key} className="rounded-xl border border-zinc-200 bg-zinc-50/50">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">{label} <span className="font-normal text-zinc-500">· {filters[key]?.length ? `${filters[key].length} seleccionados` : "Todos"}</span></summary>
+          <div className="max-h-48 space-y-1 overflow-auto border-t border-zinc-200 p-3">
+            {(options ?? []).map((item) => <label key={item.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white">
+              <input type="checkbox" checked={filters[key]?.includes(item.id) ?? false} onChange={(e) => {
+                const ids = e.target.checked ? [...(filters[key] ?? []), item.id] : (filters[key] ?? []).filter((id) => id !== item.id);
+                onChangeFilters({ ...filters, [key]: ids.length ? ids : undefined });
+              }} className="accent-[#002b7f]" />{item.label}
+            </label>)}
+          </div>
+        </details>)}
         <fieldset className="text-xs font-semibold"><legend>Ingreso estimado (USD)</legend><div className="mt-1 flex gap-2">
           <input aria-label="Ingreso mínimo" type="number" min="0" placeholder="Mínimo" value={filters.income?.min ?? ""} onChange={(e) => onChangeFilters({ ...filters, income: e.target.value || filters.income?.max !== undefined ? { min: e.target.value ? Number(e.target.value) : undefined, max: filters.income?.max } : undefined })} className="w-full rounded-xl border border-zinc-200 p-2 font-normal" />
           <input aria-label="Ingreso máximo" type="number" min="0" placeholder="Máximo" value={filters.income?.max ?? ""} onChange={(e) => onChangeFilters({ ...filters, income: e.target.value || filters.income?.min !== undefined ? { min: filters.income?.min, max: e.target.value ? Number(e.target.value) : undefined } : undefined })} className="w-full rounded-xl border border-zinc-200 p-2 font-normal" />
-        </div></fieldset>
+        </div>{invalidIncome && <p role="alert" className="mt-2 text-xs font-normal text-rose-700">Ingresa valores positivos y verifica que el mínimo no supere el máximo.</p>}</fieldset>
       </div>
     </div>
     <div className="grid gap-6 md:grid-cols-2">
-      {[{ title: "Indicadores Estadísticos", items: metrics.map((id) => ({ id, label: catalog?.indicators.find((item) => item.id === id)?.label ?? id })) , selected: selectedMetrics, update: setSelectedMetrics, max: 4 }, { title: "Secciones del Informe", items: sections.map((id) => ({ id, label: sectionLabels[id] })), selected: selectedSections, update: setSelectedSections, max: 5 }].map((group, index) => <div key={group.title} className="glass-surface hud-bracket space-y-3 rounded-3xl p-6 shadow-sm">
-        <h2 className="border-b border-zinc-200/60 pb-3 text-sm font-extrabold">{group.title} <span className="font-mono text-xs text-[#002b7f]">{group.selected.length} / {group.max}</span></h2>
-        {group.items.map((item) => <button key={item.id} type="button" aria-pressed={group.selected.includes(item.id as never)} onClick={() => toggle(group.selected, item.id, (next) => group.update(next as never), group.max)} className="flex w-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 p-3 text-left text-xs font-bold hover:border-blue-300">
+      {[{ title: "Indicadores", items: metrics.map((id) => ({ id, label: catalog?.indicators.find((item) => item.id === id)?.label ?? id })) , selected: selectedMetrics, update: setSelectedMetrics, max: 4 }, { title: "Secciones del reporte", items: sections.map((id) => ({ id, label: sectionLabels[id] })), selected: selectedSections, update: setSelectedSections, max: 5 }].map((group, index) => <div key={group.title} className="space-y-3 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="border-b border-zinc-100 pb-4"><p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-widest text-[#002b7f]">{index ? "03 / Contenido" : "02 / Indicadores"}</p>
+        <h2 className="text-lg font-bold">{group.title} <span className="ml-1 font-mono text-xs font-normal text-zinc-500">{group.selected.length} / {group.max}</span></h2>
+        <p className="mt-1 text-xs text-zinc-500">Selecciona al menos uno.</p></div>
+        {group.items.map((item) => <button key={item.id} type="button" aria-pressed={group.selected.includes(item.id as never)} onClick={() => toggle(group.selected, item.id, (next) => group.update(next as never), group.max)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[#002b7f] ${group.selected.includes(item.id as never) ? "border-blue-200 bg-blue-50/60 text-[#002b7f]" : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-300"}`}>
           {group.selected.includes(item.id as never) ? <CheckSquare className={index ? "size-4 text-[#ff6a00]" : "size-4 text-[#002b7f]"} /> : <Square className="size-4 text-zinc-300" />}{item.label}
         </button>)}
       </div>)}
@@ -111,12 +135,12 @@ export function ReportConfigurator({ filters, onChangeFilters }: { filters: Filt
     <p className="text-xs text-zinc-600">{catalog ? `Fuente: ${catalog.dataset.sourceLabel}. Ingresos estimados, período ${catalog.income.period ?? "no documentado"}. Supresión de privacidad para muestras menores a ${catalog.privacy.minimumPublishableN}. Sin departamentos seleccionados se consulta toda la muestra.` : "Cargando catálogo…"} La narrativa asistida por IA puede no estar disponible.</p>
     {error && <p role="alert" className="flex items-center gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-800"><AlertTriangle className="size-4" />{error}</p>}
     {message && <p role="status" className="text-sm text-emerald-700">{message}</p>}
-    <div className="glass-surface hud-bracket flex flex-col gap-4 rounded-3xl p-6 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-xs font-bold">Listo: {selectedSections.length} secciones, {selectedMetrics.length} indicadores</span>
+    <div className="flex flex-col gap-4 rounded-3xl bg-[#002b7f] p-5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <div className="flex items-center gap-3"><span className="rounded-xl bg-white/10 p-3"><FileText className="size-5" /></span><div><p className="font-bold">Tu reporte está casi listo</p><p className="mt-1 text-xs text-blue-100">{selectedSections.length} secciones · {selectedMetrics.length} indicadores · {activeFilters ? `${activeFilters} filtros activos` : "Toda la muestra"}</p></div></div>
       <div className="flex gap-2">
-        {busy && <button type="button" onClick={() => controller?.abort()} className="rounded-2xl border px-4 py-3 text-xs font-bold">Cancelar</button>}
-        <button type="button" disabled={busy || !catalog || !selectedMetrics.length || !selectedSections.length} onClick={download} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#002b7f] to-[#001d54] px-7 py-3 text-xs font-bold text-white disabled:opacity-50">
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4 text-orange-400" />}{busy ? "Generando PDF…" : "Generar y descargar PDF"}
+        {busy && <button type="button" onClick={() => controller?.abort()} className="rounded-xl border border-white/40 px-4 py-3 text-xs font-bold">Cancelar</button>}
+        <button type="button" disabled={busy || !catalog || invalidIncome || !selectedMetrics.length || !selectedSections.length} onClick={download} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-[#002b7f] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50">
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}{busy ? "Generando PDF…" : "Generar y descargar PDF"}
         </button>
       </div>
     </div>

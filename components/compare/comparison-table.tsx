@@ -92,7 +92,9 @@ export function ComparisonTable({
   return (
     <div className="space-y-6">
       {/* Reference Summary KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <details>
+      <summary className="cursor-pointer text-sm font-semibold text-[#002b7f]">Ver resumen del departamento base</summary>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {selectedMetrics.map((metricId) => {
           const title =
             metricId === "financial_exclusion_pct"
@@ -155,15 +157,16 @@ export function ComparisonTable({
           );
         })}
       </div>
+      </details>
 
       {/* Futuristic Comparison Matrix Table */}
       <div className="glass-surface hud-bracket overflow-hidden rounded-3xl border border-zinc-200/80 shadow-sm">
         <div className="border-b border-zinc-200/60 p-5 bg-gradient-to-r from-zinc-50/80 to-white flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-extrabold text-zinc-950">Matriz Comparativa Departamental</h3>
+            <h3 className="text-sm font-extrabold text-zinc-950">Resultados por departamento</h3>
             <p className="text-[11px] text-zinc-500 mt-0.5">
-              Diferencias calculadas respecto al territorio base (
-              <span className="font-bold text-orange-600">{referenceDept?.label}</span>).
+              Las diferencias se calculan respecto a{" "}
+              <span className="font-bold text-orange-600">{referenceDept?.label}</span>.
             </p>
           </div>
           <span className="font-mono text-[11px] text-zinc-400">

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { Suspense, useEffect, useState, useRef, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import type { DepartmentId, Filters, MetricId } from "@/src/contracts/common";
 import type { CompareResponse } from "@/src/contracts/compare";
@@ -14,7 +14,6 @@ import { FilterBar } from "@/components/filters/filter-bar";
 import { filterSearchParams } from "@/src/lib/filter-url";
 import {
   GitCompare,
-  BarChart3,
   AlertCircle,
   Loader2,
 } from "lucide-react";
@@ -236,68 +235,42 @@ function ComparadorContent({ query }: { query: string }) {
   const reportHref = `/reportes${chatParams.size ? `?${chatParams.toString()}` : ""}`;
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="Logo ImpactAtlas"
-              width={140}
-              height={36}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </Link>
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-zinc-600 md:flex">
-            <Link href={explorerHref} className="transition-colors hover:text-[#002b7f]">
-              Explorador y Mapa
-            </Link>
-            <span className="text-[#002b7f] font-bold border-b-2 border-[#002b7f] py-5">
-              Comparador Departamental
-            </span>
-            <Link
-              href={chatHref}
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Chat Asistente
-            </Link>
-            <Link
-              href={reportHref}
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Reportes Ejecuto-Descargables
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href={explorerHref}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
-            >
-              <BarChart3 className="size-3.5" />
-              Ver Mapa
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative">
+      {/* Futuristic Site Header */}
+      <SiteHeader />
 
       {/* Main Content Area */}
       <main className="relative mx-auto w-full max-w-7xl flex-1 px-6 sm:px-8 py-8 space-y-6">
         <div className="absolute inset-0 bg-tech-grid opacity-30 pointer-events-none" />
 
+        {/* Contextual navigation keeps the active filters/departments when switching views */}
+        <nav aria-label="Navegación contextual con filtros activos" className="relative flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-zinc-600 sm:gap-x-8 sm:text-sm">
+          <Link href={explorerHref} className="transition-colors hover:text-[#002b7f]">
+            Explorador y Mapa
+          </Link>
+          <span className="font-bold text-[#002b7f] border-b-2 border-[#002b7f] pb-1">
+            Comparador
+          </span>
+          <Link href={chatHref} className="transition-colors hover:text-[#002b7f]">
+            Asistente IA
+          </Link>
+          <Link href={reportHref} className="transition-colors hover:text-[#002b7f]">
+            Reportes PDF
+          </Link>
+        </nav>
+
         {/* Title Header */}
         <div className="relative flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-orange-50/70 px-3.5 py-1 text-xs font-semibold text-[#ff6a00] shadow-2xs">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/70 px-3.5 py-1 text-xs font-semibold text-[#002b7f] mb-2 shadow-2xs">
               <GitCompare className="size-3.5 text-[#ff6a00]" />
-              <span className="font-mono text-[11px] tracking-wide uppercase">MATRIZ TERRITORIAL · ANÁLISIS DE BRECHAS</span>
+              <span>Comparación entre departamentos</span>
             </div>
-            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">
-              Comparador Territorial de Brechas
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
+              Compara departamentos
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-zinc-600 max-w-3xl leading-relaxed">
-              Contraste multidimensional entre departamentos con base de referencia dinámica. Las brechas se calculan en dólares ($ USD) y puntos porcentuales (pp), garantizando comparaciones rigurosas sin sesgos relativos.
+            <p className="text-xs sm:text-sm text-zinc-600 mt-1 max-w-2xl leading-relaxed">
+              Elige dos o más departamentos para comparar sus ingresos, exclusión financiera y cantidad de perfiles.
             </p>
           </div>
 
@@ -357,7 +330,7 @@ function ComparadorContent({ query }: { query: string }) {
               Se requieren al menos 2 departamentos
             </h3>
             <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-              Para calcular brechas relativas y matrices de comparación territoriales, seleccione dos o más departamentos en el panel superior.
+              Selecciona dos o más departamentos en el panel superior para ver sus resultados.
             </p>
             <div className="pt-2">
               <button
@@ -374,7 +347,10 @@ function ComparadorContent({ query }: { query: string }) {
         {/* 5. Comparison Results */}
         {selectedDepts.length >= 2 && data && (
           <div className="space-y-6">
-            {/* KPI Cards and Comparative Matrix Table */}
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm leading-relaxed text-zinc-700">
+              <strong className="text-[#002b7f]">Cómo leer la comparación: </strong>
+              cada fila muestra los datos de un departamento. La diferencia debajo de cada valor se calcula frente al departamento marcado como base. Puedes cambiar la base en la tabla.
+            </div>
             <ComparisonTable
               departments={data.data.departments}
               referenceId={referenceDept}
@@ -382,36 +358,29 @@ function ComparadorContent({ query }: { query: string }) {
               onSetReference={handleSetReference}
             />
 
-            {/* Categorical Breakdown Comparison */}
-            <BreakdownComparison
-              departments={data.data.departments}
-              referenceId={referenceDept}
-              activeBreakdown={activeBreakdown}
-              onChangeBreakdown={setActiveBreakdown}
-            />
+            <details className="rounded-2xl border border-zinc-200 bg-white">
+              <summary className="cursor-pointer px-5 py-4 text-sm font-bold text-zinc-900">
+                Ver detalle por educación, ocupación o meta
+              </summary>
+              <div className="px-2 pb-2 sm:px-4 sm:pb-4">
+                <BreakdownComparison
+                  departments={data.data.departments}
+                  referenceId={referenceDept}
+                  activeBreakdown={activeBreakdown}
+                  onChangeBreakdown={setActiveBreakdown}
+                />
+              </div>
+            </details>
 
             {/* Methodological Context Footer */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-xs text-zinc-600 space-y-3">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                <span className="font-bold text-zinc-900 uppercase tracking-wide">
-                  Metodología de Comparación y Transparencia
-                </span>
-                <span className="text-[11px] font-mono text-zinc-400">
-                  ID Petición: {data.meta.requestId.slice(0, 8)} • Muestra: {data.meta.sampleSize?.toLocaleString()}
-                </span>
+            <details className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-sm text-zinc-600">
+              <summary className="cursor-pointer font-bold text-zinc-900">Cómo se calculan los resultados</summary>
+              <div className="mt-3 space-y-2 leading-relaxed">
+                <p><strong>Ingreso promedio</strong> es la suma de los ingresos dividida entre los perfiles. <strong>Ingreso mediano</strong> es el valor central al ordenar los ingresos.</p>
+                <p><strong>Puntos porcentuales (pp)</strong> son la resta entre dos porcentajes: de 20% a 25% hay 5 pp de diferencia.</p>
+                <p>Para proteger la privacidad, se ocultan los datos de grupos con menos de 5 registros. Muestra total: {data.meta.sampleSize?.toLocaleString("es-SV") ?? "no disponible"}.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-zinc-500">
-                <div>
-                  <strong className="text-zinc-800">Cálculo en Servidor:</strong> Todas las diferencias y agregaciones se procesan en PostgreSQL sin aproximaciones ni redondeos acumulados en el cliente.
-                </div>
-                <div>
-                  <strong className="text-zinc-800">Puntos Porcentuales:</strong> Las variaciones de tasas (como exclusión financiera o escolaridad) se expresan en puntos porcentuales (pp) para evitar el sesgo de restas relativas.
-                </div>
-                <div>
-                  <strong className="text-zinc-800">Supresión de Privacidad:</strong> Si una cohorte departamental o categoría cuenta con menos de 5 registros ($n &lt; 5$), sus datos y diferencias asociadas se omiten para evitar reidentificación.
-                </div>
-              </div>
-            </div>
+            </details>
           </div>
         )}
       </main>
@@ -426,10 +395,10 @@ export default function ComparadorPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#002b7f]">
-            <Loader2 className="size-4 animate-spin" />
-            Cargando comparador...
+        <div className="flex min-h-screen items-center justify-center bg-white text-zinc-500">
+          <div className="flex items-center gap-3">
+            <div className="size-4 animate-spin rounded-full border-2 border-[#002b7f] border-t-transparent" />
+            <span className="text-xs font-semibold">Cargando comparador...</span>
           </div>
         </div>
       }

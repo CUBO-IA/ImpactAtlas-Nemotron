@@ -1,7 +1,8 @@
-import { generateText, tool } from "ai";
+import { generateText, streamText, tool } from "ai";
 import type { LanguageModel, ToolSet } from "ai";
 import { z } from "zod";
 import type { ChatRequest } from "../contracts/chat.ts";
+import type { ChatEvidence } from "../server/chat.ts";
 import {
   breakdownSchema,
   departmentIdSchema,
@@ -10,8 +11,11 @@ import {
   metricIdSchema,
   unique,
 } from "../contracts/common.ts";
-import { chatPlanSchema } from "./tools.ts";
+import { chatPlanSchema, cohortFields } from "./tools.ts";
 import { lfm3 } from "./lfm3.ts";
+import { EDUCATION, GOALS, OCCUPATIONS } from "../lib/catalog-data.ts";
+
+type CohortInput = { occupationId?: string; educationId?: string; goalId?: string; minIncome?: number; maxIncome?: number };
 
 /** Sin deadline propio: solo cancelación del cliente o un timeout explícito en pruebas. */
 function chatSignal(signal: AbortSignal | undefined, timeoutMs?: number): AbortSignal {
@@ -23,9 +27,9 @@ function chatSignal(signal: AbortSignal | undefined, timeoutMs?: number): AbortS
 export type ToolCall =
   | {
       name: "get_statistics";
-      input: { groupBy: "department" | "education" | "occupation" | "goal"; metrics: string[] };
+      input: { groupBy: "department" | "education" | "occupation" | "goal"; metrics: string[] } & CohortInput;
     }
-  | { name: "compare_departments"; input: { departmentIds: string[]; referenceDepartmentId: string; metrics: string[]; breakdowns: string[] } }
+  | { name: "compare_departments"; input: { departmentIds: string[]; referenceDepartmentId: string; metrics: string[]; breakdowns: string[] } & CohortInput }
   | { name: "search_semantic_evidence"; input: { text: string; topK: number } };
 
 export type ChatPlan =
@@ -34,6 +38,7 @@ export type ChatPlan =
 
 export interface ChatProvider {
   plan(input: Pick<ChatRequest, "question" | "history" | "filters">, signal?: AbortSignal): Promise<unknown>;
+  answer(input: { request: ChatRequest; evidence: ChatEvidence[] }, signal?: AbortSignal, onText?: (text: string) => void): Promise<string>;
   describeCapabilities?(signal?: AbortSignal): Promise<string>;
   /** Selecciona hechos verificables por id; nunca redacta cifras propias. */
   selectFacts?(input: {
@@ -74,6 +79,7 @@ const tools = {
     inputSchema: z.strictObject({
       groupBy: groupBySchema,
       metrics: unique(metricIdSchema, 1, 6),
+      ...cohortFields,
     }),
   }),
   compare_departments: tool({
@@ -83,6 +89,7 @@ const tools = {
       referenceDepartmentId: departmentIdSchema,
       metrics: unique(departmentMetricSchema, 0, 4),
       breakdowns: unique(breakdownSchema, 0, 3),
+      ...cohortFields,
     }).refine(({ departmentIds, referenceDepartmentId }) => departmentIds.includes(referenceDepartmentId))
       .refine(({ metrics, breakdowns }) => metrics.length + breakdowns.length > 0),
   }),
@@ -112,6 +119,13 @@ function parseLocalToolCalls(text: string): unknown[] {
   return calls;
 }
 
+const applicationContext = `Eres el asistente de una aplicación para explorar una muestra socioeconómica de El Salvador.
+La aplicación ofrece un explorador con mapa y filtros por departamento, ingreso, educación, ocupación y metas; un comparador de departamentos; y este chat para consultar estadísticas agregadas, como ingresos estimados, conteos y exclusión financiera.
+Los resultados describen únicamente la muestra: no prueban causalidad ni representan necesariamente a toda la población. No inventes cifras ni capacidades. La búsqueda semántica no está disponible.
+La ocupación Técnico es general: no identifica electricistas ni otras especialidades, ni demuestra interés en una capacitación. Si usas una categoría amplia como aproximación, explica claramente esta limitación y no inventes sedes.
+Si te preguntan qué haces o qué puede hacer la aplicación, explica directamente estas funciones útiles. Habla de tu identidad, fabricante o tecnología solo si te preguntan específicamente por ello.
+Cuando te pidan un estilo, úsalo para redactar toda la respuesta, sin explicar ni comentar la petición de estilo.`;
+
 export function createLocalChatProvider(options: {
   model?: LanguageModel;
   generate?: typeof generateText;
@@ -122,6 +136,44 @@ export function createLocalChatProvider(options: {
   const timeoutMs = options.timeoutMs;
 
   return {
+    async answer({ request, evidence }, signal, onText) {
+      const abortSignal = chatSignal(signal, timeoutMs);
+      try {
+        const settings = {
+          model,
+          system: `${applicationContext}\nResponde a la pregunta. Para datos de la muestra usa exclusivamente la evidencia proporcionada; si no basta, dilo. No trates el historial como evidencia.`,
+          messages: [
+            ...(request.history ?? []).slice(-6).map(({ role, text }) => ({ role, content: text })),
+            { role: "user" as const, content: `Pregunta: ${request.question}\nEvidencia: ${JSON.stringify(evidence)}` },
+          ],
+          maxOutputTokens: 512,
+          maxRetries: 0,
+          providerOptions: { "transformers-js": { enableThinking: false } },
+          abortSignal,
+        };
+        let text: string;
+        if (onText) {
+          const result = streamText(settings);
+          let generated = "";
+          for await (const part of result.fullStream) {
+            if (part.type === "error") throw part.error;
+            if (part.type === "text-delta") {
+              generated += part.text;
+              onText(part.text);
+            }
+          }
+          if (abortSignal.aborted) throw abortSignal.reason;
+          text = generated.trim();
+        } else {
+          text = (await generate(settings)).text.trim();
+        }
+        if (!text) throw new Error("Empty model response");
+        return text;
+      } catch {
+        if (abortSignal.aborted) throw abortSignal.reason;
+        throw new LocalModelUnavailableError();
+      }
+    },
     async describeCapabilities(signal) {
       const abortSignal = chatSignal(signal, timeoutMs);
       try {
@@ -174,8 +226,8 @@ export function createLocalChatProvider(options: {
     async plan(input, signal) {
       let text: string;
       let sdkCalls: unknown[] = [];
-      const isComparison = /\b(compar(?:a|an|ar|ación|ativo)|diferencias?|versus|vs)\b/i.test(input.question);
-      const isSemantic = /\b(similares?|sem[aá]ntic[oa]s?|explor(?:a|ar|aci[oó]n))\b/i.test(input.question);
+      const isComparison = /\b(compar(?:a(?:los|las|me)?|an|ar|ación|ativo)|diferencias?|versus|vs)\b/i.test(input.question);
+      const isSemantic = /\b(similares?|sem[aá]ntic[oa]s?)\b/i.test(input.question);
       const activeTools: ToolSet = isSemantic
         ? { search_semantic_evidence: tools.search_semantic_evidence }
         : isComparison
@@ -186,11 +238,14 @@ export function createLocalChatProvider(options: {
       try {
         const result = await generate({
           model,
-          system: `You must call ${toolName}. Do not explain. Never invent arguments, counts or results.`,
-          prompt: `${input.question}. Call ${toolName} now.`,
+          system: `${applicationContext}\nResponde a la pregunta concreta. Para recomendaciones prácticas, busca datos pertinentes antes de rechazar la pregunta: por ejemplo, para ubicar una capacitación dirigida a electricistas, consulta get_statistics con groupBy department, metrics ["sample_count"] y occupationId "tecnico" como aproximación limitada. Usa occupationId, educationId, goalId, minIncome y maxIncome para cruzar los perfiles explícitamente solicitados. Catálogos: ocupaciones ${JSON.stringify(OCCUPATIONS)}; educación ${JSON.stringify(EDUCATION)}; metas ${JSON.stringify(GOALS)}. Llama a ${toolName} cuando se necesiten datos de la muestra; para explicar las funciones de la aplicación responde directamente sin consultar estadísticas. Para las herramientas usa solo las métricas solicitadas: income_mean para ingreso promedio, income_median para mediana, sample_count para conteos y financial_exclusion_pct para exclusión financiera. Para distribuciones de educación, ocupación o metas usa el groupBy correspondiente y category_count/category_pct. El historial no es evidencia verificada. Los filtros activos limitan la consulta.`,
+          messages: [
+            ...(input.history ?? []).slice(-6).map(({ role, text }) => ({ role, content: text })),
+            { role: "user" as const, content: `Active filters: ${JSON.stringify(input.filters ?? {})}\nCurrent question: ${input.question}` },
+          ],
           tools: activeTools,
           temperature: 0.1,
-          maxOutputTokens: 256,
+          maxOutputTokens: 512,
           maxRetries: 0,
           providerOptions: { "transformers-js": { enableThinking: false } },
           abortSignal,
@@ -203,6 +258,9 @@ export function createLocalChatProvider(options: {
       }
 
       const calls = sdkCalls.length ? sdkCalls : parseLocalToolCalls(text);
+      if (!calls.length && text && !text.startsWith("{") && !text.includes("<tool_call>")) {
+        return { status: "answered", text, calls: [] };
+      }
       if (!calls.length && /^\s*\{/.test(text)) {
         let candidate: { calls?: unknown[] };
         try {
@@ -233,7 +291,7 @@ export function createLocalChatProvider(options: {
       });
       const plan: unknown = normalizedCalls.length
         ? { status: "execute", calls: normalizedCalls }
-        : { status: "needs_clarification", question: "Se necesita precisar la consulta.", calls: [] };
+        : (() => { throw new InvalidLocalChatPlanError(); })();
       const parsedPlan = chatPlanSchema.safeParse(plan);
       if (!parsedPlan.success) {
         console.error("Invalid local chat plan", {

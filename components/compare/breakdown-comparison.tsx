@@ -50,11 +50,11 @@ export function BreakdownComparison({
           <div className="flex items-center gap-2">
             <span className="flex size-2 rounded-full bg-[#002b7f]" />
             <h3 className="text-sm font-extrabold text-zinc-950">
-              Distribuciones Categóricas Alineadas
+              Comparación por categoría
             </h3>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Categorías normalizadas del catálogo oficial. Diferencias expresadas en puntos porcentuales (pp) respecto a {referenceDept?.label ?? "la referencia"}.
+            Compara cada categoría entre departamentos. La diferencia en puntos porcentuales (pp) se calcula respecto a {referenceDept?.label ?? "la base"}.
           </p>
         </div>
 

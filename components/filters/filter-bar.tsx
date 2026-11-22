@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Filters } from "@/src/contracts/common";
 import type { CatalogResponse } from "@/src/contracts/catalog";
 import { RotateCcw, SlidersHorizontal } from "lucide-react";
@@ -10,6 +10,7 @@ interface FilterBarProps {
   onChangeFilters: (next: Filters) => void;
   sampleSize: number | null;
   loading: boolean;
+  incomeDebounceMs?: number;
 }
 
 export function FilterBar({
@@ -17,9 +18,16 @@ export function FilterBar({
   onChangeFilters,
   sampleSize,
   loading,
+  incomeDebounceMs = 0,
 }: FilterBarProps) {
   const [catalog, setCatalog] = useState<CatalogResponse["data"] | null>(null);
   const [catalogError, setCatalogError] = useState(false);
+  const [incomeMin, setIncomeMin] = useState(filters.income?.min?.toString() ?? "");
+  const [incomeMax, setIncomeMax] = useState(filters.income?.max?.toString() ?? "");
+  const incomeTimeoutRef = useRef<number | null>(null);
+  const filtersRef = useRef(filters);
+  const onChangeFiltersRef = useRef(onChangeFilters);
+
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/catalog", { signal: controller.signal })
@@ -33,6 +41,47 @@ export function FilterBar({
       });
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+    onChangeFiltersRef.current = onChangeFilters;
+  }, [filters, onChangeFilters]);
+
+  useEffect(
+    () => () => {
+      if (incomeTimeoutRef.current !== null) {
+        window.clearTimeout(incomeTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  function scheduleIncomeChange(minStr: string, maxStr: string) {
+    if (incomeTimeoutRef.current !== null) {
+      window.clearTimeout(incomeTimeoutRef.current);
+    }
+    incomeTimeoutRef.current = window.setTimeout(() => {
+      const min = minStr ? parseFloat(minStr) : undefined;
+      const max = maxStr ? parseFloat(maxStr) : undefined;
+      const currentFilters = filtersRef.current;
+
+      if (min === undefined && max === undefined) {
+        const next = { ...currentFilters };
+        delete next.income;
+        onChangeFiltersRef.current(next);
+      } else {
+        onChangeFiltersRef.current({
+          ...currentFilters,
+          income: {
+            min: min !== undefined && !isNaN(min) && min >= 0 ? min : undefined,
+            max: max !== undefined && !isNaN(max) && max >= 0 ? max : undefined,
+          },
+        });
+      }
+      incomeTimeoutRef.current = null;
+    }, incomeDebounceMs);
+  }
+
   const activeCount =
     (filters.departmentIds ? filters.departmentIds.length : 0) +
     (filters.income?.min !== undefined || filters.income?.max !== undefined ? 1 : 0) +
@@ -41,6 +90,12 @@ export function FilterBar({
     (filters.goalIds ? filters.goalIds.length : 0);
 
   function handleReset() {
+    if (incomeTimeoutRef.current !== null) {
+      window.clearTimeout(incomeTimeoutRef.current);
+      incomeTimeoutRef.current = null;
+    }
+    setIncomeMin("");
+    setIncomeMax("");
     onChangeFilters({});
   }
 
@@ -113,10 +168,15 @@ export function FilterBar({
               id="filter-income-min"
               aria-label="Ingreso mínimo estimado en USD"
               placeholder="Mín"
-              value={filters.income?.min ?? ""}
-              onChange={(e) =>
-                handleIncomeChange(e.target.value, filters.income?.max?.toString() ?? "")
-              }
+              value={incomeMin}
+              onChange={(e) => {
+                setIncomeMin(e.target.value);
+                if (incomeDebounceMs > 0) {
+                  scheduleIncomeChange(e.target.value, incomeMax);
+                } else {
+                  handleIncomeChange(e.target.value, incomeMax);
+                }
+              }}
               className="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3 py-2 text-xs font-mono text-zinc-900 transition-all placeholder:text-zinc-400 focus:bg-white focus:border-[#002b7f] focus:outline-none focus:ring-2 focus:ring-[#002b7f]/15"
             />
             <span className="text-zinc-400 font-mono">—</span>
@@ -124,10 +184,15 @@ export function FilterBar({
               type="number"
               aria-label="Ingreso máximo estimado en USD"
               placeholder="Máx"
-              value={filters.income?.max ?? ""}
-              onChange={(e) =>
-                handleIncomeChange(filters.income?.min?.toString() ?? "", e.target.value)
-              }
+              value={incomeMax}
+              onChange={(e) => {
+                setIncomeMax(e.target.value);
+                if (incomeDebounceMs > 0) {
+                  scheduleIncomeChange(incomeMin, e.target.value);
+                } else {
+                  handleIncomeChange(incomeMin, e.target.value);
+                }
+              }}
               className="w-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 px-3 py-2 text-xs font-mono text-zinc-900 transition-all placeholder:text-zinc-400 focus:bg-white focus:border-[#002b7f] focus:outline-none focus:ring-2 focus:ring-[#002b7f]/15"
             />
           </div>

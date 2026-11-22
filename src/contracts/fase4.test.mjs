@@ -58,10 +58,12 @@ test("POST /api/chat fundamenta comparación con bloques de respuesta", { skip: 
   assert.ok(json.data.evidence.length > 0);
   assert.equal(json.data.evidence[0].exhaustive, true);
 
-  // La respuesta determinista puede publicar evidencia como tabla, sin texto explicativo.
-  const tableBlock = json.data.blocks.find((b) => b.type === "table");
-  assert.ok(tableBlock);
-  assert.ok(tableBlock.rows.length >= 2);
+  // La comparación se responde en prosa con hechos publicables y evidenceIds verificables.
+  const textBlock = json.data.blocks.find((b) => b.type === "text");
+  assert.ok(textBlock);
+  assert.ok(textBlock.text.length > 0);
+  assert.ok(textBlock.evidenceIds.length > 0);
+  assert.ok(textBlock.evidenceIds.every((id) => json.data.evidence.some((item) => item.id === id)));
 
   const chartBlock = json.data.blocks.find((b) => b.type === "chart");
   if (chartBlock) {

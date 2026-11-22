@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { chatRequestSchema } from "@/src/contracts/chat";
-import { handleChat } from "@/src/server/chat";
+import { handleChat, type ChatData } from "@/src/server/chat";
 import { errorResponse, readJsonRequest, RequestError } from "@/src/server/request";
 import { InvalidLocalChatPlanError, LocalModelUnavailableError } from "@/src/ai/provider";
 import {
@@ -18,7 +18,14 @@ const json = (body: unknown, status: number, requestId: string) =>
     headers: { "Cache-Control": "no-store", "X-Request-Id": requestId },
   });
 
-export async function POST(request: Request) {
+type StreamEvent =
+  | { type: "stage"; stage: string }
+  | { type: "block"; block: ChatData["blocks"][number] }
+  | { type: "text"; text: string }
+  | { type: "result"; data: unknown }
+  | { type: "error"; error: { message: string } };
+
+async function handleRequest(request: Request, emit?: (event: StreamEvent) => void, callerSignal = request.signal) {
   const requestId = randomUUID();
   let stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata" | "request" = "request";
 
@@ -40,7 +47,10 @@ export async function POST(request: Request) {
       }
 
       try {
-        return json(await handleChat(parsed.data, requestId, signal, (value) => { stage = value; }), 200, requestId);
+        return json(await handleChat(parsed.data, requestId, signal, (value) => {
+          stage = value;
+          emit?.({ type: "stage", stage: value });
+        }, (block) => emit?.({ type: "block", block }), emit ? (text) => emit({ type: "text", text }) : undefined), 200, requestId);
       } catch (error) {
         if (signal.aborted) throw error;
         if (error instanceof LocalModelUnavailableError) {
@@ -56,7 +66,7 @@ export async function POST(request: Request) {
         });
         return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
       }
-    }, request.signal);
+    }, callerSignal);
   } catch (error) {
     if (error instanceof ChatBusyError) {
       return Response.json(
@@ -77,4 +87,35 @@ export async function POST(request: Request) {
     });
     return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
   }
+}
+
+export async function POST(request: Request) {
+  if (!request.headers.get("accept")?.includes("application/x-ndjson")) return handleRequest(request);
+
+  const abort = new AbortController();
+  const signal = AbortSignal.any([request.signal, abort.signal]);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: StreamEvent) => {
+        if (!signal.aborted) controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      };
+      try {
+        const response = await handleRequest(request, send, signal);
+        const body = await response.json();
+        if (response.ok) send({ type: "result", data: body });
+        else send({ type: "error", error: { message: body.error?.message ?? "No se pudo procesar la consulta." } });
+      } catch {
+        send({ type: "error", error: { message: "Se interrumpió la consulta." } });
+      } finally {
+        if (!signal.aborted) controller.close();
+      }
+    },
+    cancel() {
+      abort.abort();
+    },
+  });
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no" },
+  });
 }

@@ -5,6 +5,7 @@ import { statisticsRequestSchema, type StatisticsRequest, type StatisticsRespons
 import { chatPlanSchema } from "../ai/tools.ts";
 import { searchSemanticForChat } from "../ai/semantic.ts";
 import { getChatProvider, type ToolCall } from "../ai/provider.ts";
+import { DEPARTMENTS } from "../lib/catalog-data.ts";
 
 export type ChatData = ChatResponse["data"];
 export type ChatEvidence = ChatData["evidence"][number];
@@ -85,22 +86,10 @@ function comparisonEvidence(result: CompareResponse, filters: Filters, id: strin
   };
 }
 
-function unsupportedQuestion(question: string) {
-  return /\b(caus(?:a|al|alidad)|provoc(?:a|ar)|efecto\s+de|impacto\s+de|por\s+qu[eé]|debido\s+a|influye|afecta|determina|explica(?:n)?|representativ(?:o|a|idad)|poblaci[oó]n\s+(?:nacional|salvadoreña)|predic(?:e|ci[oó]n)|proyect(?:a|ar))\b/i.test(question);
-}
-
-const unitLabel: Record<string, string> = {
-  usd_estimated: " USD estimados",
-  percent: "%",
-  records: " registros",
-  percentage_points: " puntos porcentuales",
-};
-
-/** Toda cifra del texto sale de un hecho publicable; el modelo solo elige cuáles destacar. */
-function factSentence(fact: ChatEvidence["facts"][number]): string {
-  if (fact.value === null) return `${fact.label}: sin valor publicable.`;
-  const value = fact.value.toLocaleString("es-SV", { maximumFractionDigits: 2 });
-  return `${fact.label}: ${value}${unitLabel[fact.unit] ?? ` ${fact.unit}`}.`;
+function mentionedDepartments(question: string) {
+  const normalized = question.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return DEPARTMENTS.filter(({ id }) => new RegExp(`\\b${id.replaceAll("-", "\\s+")}\\b`).test(normalized))
+    .map(({ id }) => id);
 }
 
 type ChartUnit = ChartSpec["series"][number]["unit"];
@@ -149,54 +138,54 @@ function chartBlocks(item: ChatEvidence): ChatData["blocks"] {
 
 async function buildBlocks(
   evidence: readonly ChatEvidence[],
-  question: string,
+  request: ChatRequest,
   provider: NonNullable<ReturnType<typeof getChatProvider>>,
   signal?: AbortSignal,
+  onBlock?: (block: ChatData["blocks"][number]) => void,
+  onText?: (text: string) => void,
 ): Promise<ChatData["blocks"]> {
   const blocks: ChatData["blocks"] = [];
+  const add = (...items: ChatData["blocks"]) => {
+    blocks.push(...items);
+    items.forEach((item) => onBlock?.(item));
+  };
+  const questionText = request.question.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const textOnly = /\b(?:solo|solamente|unicamente)\s+(?:en\s+)?(?:texto|palabras)\b|\ben\s+(?:prosa|texto\s+plano)\b/.test(questionText);
+  const allowsTable = !textOnly
+    && !/\b(?:sin(?:\s+usar)?|evita|nada\s+de|no(?:\s+(?:quiero|incluyas|muestres|uses))?)\s+(?:una\s+)?(?:tablas?|cuadros?)\b/.test(questionText);
+  const wantsTable = allowsTable && /\b(?:tablas?|tabular|desglose|desglosa)\b/.test(questionText);
+  const wantsChart = !textOnly
+    && !/\b(?:sin(?:\s+usar)?|evita|nada\s+de|no(?:\s+(?:quiero|incluyas|muestres|uses))?)\s+(?:un\s+)?grafic[oa]s?\b/.test(questionText)
+    && /\b(?:grafic[oa]s?|barras|visualizacion)\b/.test(questionText);
+  const usableEvidence = evidence.filter((item) => item.kind === "sql_aggregate" ? item.facts.length > 0 : !item.description.includes("deshabilitada"));
+  if (!usableEvidence.length) return blocks;
+  const text = await provider.answer({ request, evidence: usableEvidence }, signal, onText);
+  if (!text.trim()) throw new Error("El modelo devolvió una respuesta vacía.");
+  const textBlock = { type: "text" as const, text, evidenceIds: usableEvidence.map(({ id }) => id) };
+  blocks.push(textBlock);
+  if (!onText) onBlock?.(textBlock);
   for (const item of evidence) {
     if (item.kind === "semantic_examples") {
-      if (!item.description.startsWith("La búsqueda semántica está deshabilitada")) {
-        blocks.push({ type: "text", text: item.description, evidenceIds: [item.id] });
-      }
       continue;
     }
     if (!item.facts.length) continue;
-    for (let offset = 0; offset < item.facts.length; offset += 30) {
-      blocks.push({
-        type: "table",
-        title: "Agregados publicables de la muestra",
-        columns: ["Indicador", "Valor", "Unidad"],
-        rows: item.facts.slice(offset, offset + 30).map(({ label, value, unit }) => [label, value, unit]),
-        evidenceIds: [item.id],
-      });
+    const showTable = wantsTable || (allowsTable
+      && item.description.startsWith("Comparación territorial")
+      && item.facts.length > 6);
+    if (showTable) {
+      for (let offset = 0; offset < item.facts.length; offset += 30) {
+        add({
+          type: "table",
+          title: "Detalle de los datos consultados",
+          columns: ["Indicador", "Valor", "Unidad"],
+          rows: item.facts.slice(offset, offset + 30).map(({ label, value, unit }) => [label, value, unit]),
+          evidenceIds: [item.id],
+        });
+      }
     }
-    let sentences: string[] = [];
-    if (provider.selectFacts) {
-      const ids = await provider.selectFacts({ question, facts: item.facts }, signal);
-      if (signal?.aborted) throw signal.reason;
-      const byId = new Map(item.facts.map((fact) => [fact.id, fact]));
-      sentences = ids.flatMap((id) => byId.has(id) ? [factSentence(byId.get(id)!)] : []);
-    }
-    blocks.push(...chartBlocks(item));
-    blocks.push({
-      type: "text",
-      text: sentences.length
-        ? `${sentences.join(" ")} Esta respuesta es descriptiva y se limita a los hechos publicables de la muestra; no establece causalidad ni representatividad nacional.`
-        : `${item.description} La respuesta es descriptiva y se limita a los datos publicables de la muestra; no establece causalidad ni representatividad nacional.`,
-      evidenceIds: [item.id],
-    });
+    if (wantsChart) add(...chartBlocks(item));
   }
   return blocks;
-}
-
-function abstention(text: string): ChatData {
-  return {
-    status: "insufficient_evidence",
-    blocks: [{ type: "text", text, evidenceIds: [] }],
-    evidence: [],
-    toolsUsed: [],
-  };
 }
 
 async function executeTool(
@@ -207,14 +196,17 @@ async function executeTool(
 ): Promise<ChatEvidence> {
   const filters = request.filters ?? {};
   if (call.name === "get_statistics") {
-    const parsed = statisticsRequestSchema.safeParse({ ...call.input, filters });
+    const { occupationId, educationId, goalId, minIncome, maxIncome, ...input } = call.input;
+    const appliedFilters = cohortFilters(filters, { occupationId, educationId, goalId, minIncome, maxIncome })!;
+    const parsed = statisticsRequestSchema.safeParse({ ...input, filters: appliedFilters });
     if (!parsed.success) throw new Error("Invalid statistics tool arguments");
-    return statisticsEvidence(await adapter.getStatistics(parsed.data), filters, id);
+    return statisticsEvidence(await adapter.getStatistics(parsed.data), appliedFilters, id);
   }
   if (call.name === "compare_departments") {
-    const comparisonFilters = { ...filters };
+    const { occupationId, educationId, goalId, minIncome, maxIncome, ...input } = call.input;
+    const comparisonFilters = cohortFilters(filters, { occupationId, educationId, goalId, minIncome, maxIncome })!;
     delete comparisonFilters.departmentIds;
-    const parsed = compareRequestSchema.safeParse({ ...call.input, filters: comparisonFilters });
+    const parsed = compareRequestSchema.safeParse({ ...input, filters: comparisonFilters });
     if (!parsed.success) throw new Error("Invalid comparison tool arguments");
     const result = await adapter.compareDepartments(parsed.data);
     const appliedFilters = { ...comparisonFilters, departmentIds: [...parsed.data.departmentIds].sort() };
@@ -245,54 +237,92 @@ async function executeTool(
   };
 }
 
+function cohortFilters(filters: Filters, input: {
+  occupationId?: string; educationId?: string; goalId?: string; minIncome?: number; maxIncome?: number;
+}): Filters | null {
+  const result: Filters = { ...filters };
+  for (const [key, value] of [
+    ["occupationIds", input.occupationId],
+    ["educationIds", input.educationId],
+    ["goalIds", input.goalId],
+  ] as const) {
+    if (!value) continue;
+    if (filters[key] && !filters[key].includes(value)) return null;
+    result[key] = [value];
+  }
+  if (input.minIncome !== undefined || input.maxIncome !== undefined) {
+    const min = Math.max(filters.income?.min ?? 0, input.minIncome ?? 0);
+    const max = Math.min(filters.income?.max ?? Infinity, input.maxIncome ?? Infinity);
+    if (min > max) return null;
+    result.income = { min, ...(Number.isFinite(max) ? { max } : {}) };
+  }
+  return result;
+}
+
 export function createChatOrchestrator(
   dependencies: {
     provider: NonNullable<ReturnType<typeof getChatProvider>>;
     services: ChatServices;
     onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void;
+    onBlock?: (block: ChatData["blocks"][number]) => void;
+    onText?: (text: string) => void;
   },
 ) {
   return async function orchestrate(request: ChatRequest, signal?: AbortSignal): Promise<ChatData> {
-    if (/\b(?:qu[eé])\b.{0,40}\b(?:puedes|sabes)\b.{0,40}\b(?:responder|decir(?:me)?|consultar|ayudar)\b/i.test(request.question)) {
-      dependencies.onStage?.("provider-plan");
-      const text = await dependencies.provider.describeCapabilities?.(signal)
-        ?? "Puedo resumir y comparar estadísticas agregadas publicables de la muestra por departamento, educación, ocupación y metas. Puedo consultar ingresos estimados, conteos y exclusión financiera cuando hay evidencia suficiente. No establezco causalidad ni representatividad nacional, y la búsqueda semántica no está disponible.";
-      return {
-        status: "answered",
-        blocks: [{ type: "text", text, evidenceIds: [] }],
-        evidence: [],
-        toolsUsed: [],
-      };
+    const question = request.question.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    let departmentIds = mentionedDepartments(request.question);
+    if (!departmentIds.length && /^(?:[¿¡\s]*(?:y|ahora|tambien|si|muestrame|dame|haz|pon|presenta)\b)|\ben\s+(?:una\s+)?tabla\b/.test(question)) {
+      const previousQuestion = request.history?.findLast(({ role }) => role === "user")?.text;
+      if (previousQuestion) departmentIds = mentionedDepartments(previousQuestion);
     }
-    if (/^(?:hola|saludos|buenos días|buenas tardes|buenas noches)[\s!.¿?]*$/i.test(request.question.trim())) {
+    const activeDepartments = request.filters?.departmentIds;
+    if (activeDepartments && departmentIds.some((id) => !activeDepartments.includes(id))) {
       return {
         status: "needs_clarification",
-        blocks: [{ type: "text", text: "¿Qué indicador deseas consultar y para qué alcance territorial?", evidenceIds: [] }],
+        blocks: [{ type: "text", text: "El departamento que mencionas no coincide con el filtro territorial activo. Ajusta el filtro para consultar ese territorio.", evidenceIds: [] }],
         evidence: [],
         toolsUsed: [],
       };
     }
-    if (/\bcapacitaci[oó]n\b.*\b(?:electricistas?|instalar|paneles?\s+solares?)\b/i.test(request.question)) {
-      return abstention("La muestra contiene únicamente datos socioeconómicos agregados; no incluye información sobre lugares o capacitaciones para instalar paneles solares.");
-    }
-    if (unsupportedQuestion(request.question)) {
-      return abstention("La muestra solo permite análisis descriptivos; no puede establecer causalidad, representatividad nacional ni predicciones.");
-    }
+    const scopedRequest = departmentIds.length
+      ? { ...request, filters: { ...request.filters, departmentIds } }
+      : request;
     dependencies.onStage?.("provider-plan");
-    const plan = chatPlanSchema.parse(await dependencies.provider.plan(request, signal));
+    const plan = chatPlanSchema.parse(await dependencies.provider.plan(scopedRequest, signal));
+    if (plan.status === "answered") {
+      return { status: "answered", blocks: [{ type: "text", text: plan.text, evidenceIds: [] }], evidence: [], toolsUsed: [] };
+    }
     if (plan.status === "needs_clarification") {
       return {
         status: "needs_clarification",
         blocks: [{
           type: "text",
-          text: "¿Qué indicador deseas consultar y para qué alcance territorial?",
+          text: plan.question,
           evidenceIds: [],
         }],
         evidence: [],
         toolsUsed: [],
       };
     }
-    const selectedDepartments = request.filters?.departmentIds;
+    const selectedDepartments = scopedRequest.filters?.departmentIds;
+    if (plan.calls.some((call) => call.name !== "search_semantic_evidence"
+      && !cohortFilters(scopedRequest.filters ?? {}, call.input))) {
+      return {
+        status: "needs_clarification",
+        blocks: [{ type: "text", text: "El perfil solicitado no coincide con los filtros activos. Ajusta los filtros para continuar.", evidenceIds: [] }],
+        evidence: [],
+        toolsUsed: [],
+      };
+    }
+    if (plan.calls.some((call) => call.name === "get_statistics"
+      && !statisticsRequestSchema.safeParse({ groupBy: call.input.groupBy, metrics: call.input.metrics, filters: scopedRequest.filters ?? {} }).success)) {
+      return {
+        status: "needs_clarification",
+        blocks: [{ type: "text", text: "No pude combinar ese indicador con el desglose solicitado. Prueba preguntando por ingresos por departamento o por la distribución de educación, ocupación o metas.", evidenceIds: [] }],
+        evidence: [],
+        toolsUsed: [],
+      };
+    }
     const compareScopeChanged = selectedDepartments && plan.calls.some((call) =>
       call.name === "compare_departments"
       && (selectedDepartments.length !== call.input.departmentIds.length
@@ -314,9 +344,9 @@ export function createChatOrchestrator(
     for (const [index, call] of plan.calls.entries()) {
       dependencies.onStage?.(call.name === "get_statistics" ? "statistics"
         : call.name === "compare_departments" ? "compare" : "semantic");
-      evidence.push(await executeTool(call, request, dependencies.services, `ev-${index + 1}`));
+      evidence.push(await executeTool(call, scopedRequest, dependencies.services, `ev-${index + 1}`));
     }
-    const blocks = await buildBlocks(evidence, request.question, dependencies.provider, signal);
+    const blocks = await buildBlocks(evidence, request, dependencies.provider, signal, dependencies.onBlock, dependencies.onText);
     if (!blocks.length) {
       return {
         status: "insufficient_evidence",
@@ -346,6 +376,8 @@ export async function handleChat(
   requestId: string,
   callerSignal?: AbortSignal,
   onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void,
+  onBlock?: (block: ChatData["blocks"][number]) => void,
+  onText?: (text: string) => void,
 ): Promise<ChatResponse> {
   const provider = getChatProvider();
   if (!provider) throw new Error("Approved chat provider is not configured");
@@ -356,7 +388,7 @@ export async function handleChat(
       return searchSemanticForChat(input.text, await getCatalog(), input.filters, input.topK);
     },
   };
-  const data = await createChatOrchestrator({ provider, services: adapters, onStage })(request, callerSignal);
+  const data = await createChatOrchestrator({ provider, services: adapters, onStage, onBlock, onText })(request, callerSignal);
   const evidenceFilters = data.evidence[0]?.filters;
   const sameEvidenceFilters = evidenceFilters
     && data.evidence.every((item) => JSON.stringify(item.filters) === JSON.stringify(evidenceFilters));

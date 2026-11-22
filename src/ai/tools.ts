@@ -1,10 +1,23 @@
 import { z } from "zod";
 import { breakdownSchema, departmentIdSchema, departmentMetricSchema, groupBySchema, unique } from "../contracts/common.ts";
 import { metricIdSchema } from "../contracts/common.ts";
+import { EDUCATION, GOALS, OCCUPATIONS } from "../lib/catalog-data.ts";
+
+export const cohortFields = {
+  occupationId: z.enum(OCCUPATIONS.map(({ id }) => id)).optional(),
+  educationId: z.enum(EDUCATION.map(({ id }) => id)).optional(),
+  goalId: z.enum(GOALS.map(({ id }) => id)).optional(),
+  minIncome: z.number().finite().nonnegative().optional(),
+  maxIncome: z.number().finite().nonnegative().optional(),
+};
 
 const statsCall = z.strictObject({
   name: z.literal("get_statistics"),
-  input: z.strictObject({ groupBy: groupBySchema, metrics: unique(metricIdSchema, 1, 6) }),
+  input: z.strictObject({
+    groupBy: groupBySchema,
+    metrics: unique(metricIdSchema, 1, 6),
+    ...cohortFields,
+  }),
 });
 const compareCall = z.strictObject({
   name: z.literal("compare_departments"),
@@ -13,6 +26,7 @@ const compareCall = z.strictObject({
     referenceDepartmentId: departmentIdSchema,
     metrics: unique(departmentMetricSchema, 0, 4),
     breakdowns: unique(breakdownSchema, 0, 3),
+    ...cohortFields,
   }).refine(({ departmentIds, referenceDepartmentId }) => departmentIds.includes(referenceDepartmentId))
     .refine(({ metrics, breakdowns }) => metrics.length + breakdowns.length > 0),
 });
@@ -22,6 +36,11 @@ const semanticCall = z.strictObject({
 });
 
 export const chatPlanSchema = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("answered"),
+    text: z.string().trim().min(1).max(4000),
+    calls: z.tuple([]),
+  }),
   z.strictObject({
     status: z.literal("needs_clarification"),
     question: z.string().trim().min(1).max(500),
