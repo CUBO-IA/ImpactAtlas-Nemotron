@@ -1,4 +1,4 @@
-import type { ChatRequest, ChatResponse } from "../contracts/chat.ts";
+import type { ChatRequest, ChatResponse, ChartSpec } from "../contracts/chat.ts";
 import { compareRequestSchema, type CompareRequest, type CompareResponse } from "../contracts/compare.ts";
 import type { Filters } from "../contracts/common.ts";
 import { statisticsRequestSchema, type StatisticsRequest, type StatisticsResponse } from "../contracts/statistics.ts";
@@ -89,30 +89,105 @@ function unsupportedQuestion(question: string) {
   return /\b(caus(?:a|al|alidad)|provoc(?:a|ar)|efecto\s+de|impacto\s+de|por\s+qu[eé]|debido\s+a|influye|afecta|determina|explica(?:n)?|representativ(?:o|a|idad)|poblaci[oó]n\s+(?:nacional|salvadoreña)|predic(?:e|ci[oó]n)|proyect(?:a|ar))\b/i.test(question);
 }
 
-function deterministicBlocks(evidence: readonly ChatEvidence[]): ChatData["blocks"] {
-  return evidence.flatMap((item): ChatData["blocks"] => {
-    if (item.kind === "semantic_examples") {
-      if (item.description.startsWith("La búsqueda semántica está deshabilitada")) return [];
-      return [{
-        type: "text",
-        text: item.description,
+const unitLabel: Record<string, string> = {
+  usd_estimated: " USD estimados",
+  percent: "%",
+  records: " registros",
+  percentage_points: " puntos porcentuales",
+};
+
+/** Toda cifra del texto sale de un hecho publicable; el modelo solo elige cuáles destacar. */
+function factSentence(fact: ChatEvidence["facts"][number]): string {
+  if (fact.value === null) return `${fact.label}: sin valor publicable.`;
+  const value = fact.value.toLocaleString("es-SV", { maximumFractionDigits: 2 });
+  return `${fact.label}: ${value}${unitLabel[fact.unit] ?? ` ${fact.unit}`}.`;
+}
+
+type ChartUnit = ChartSpec["series"][number]["unit"];
+
+const chartUnitLabels: Record<ChartUnit, string> = {
+  records: "Registros",
+  usd_estimated: "USD estimados",
+  percent: "Porcentaje",
+  percentage_points: "Puntos porcentuales",
+};
+
+const chartUnits = new Set<string>(Object.keys(chartUnitLabels));
+
+/** Gráficos con los mismos hechos publicables de la tabla, agrupados por unidad (máx. 2 paneles). */
+function chartBlocks(item: ChatEvidence): ChatData["blocks"] {
+  const byUnit = new Map<ChartUnit, ChatEvidence["facts"]>();
+  for (const fact of item.facts) {
+    if (fact.value === null || !chartUnits.has(fact.unit)) continue;
+    const unit = fact.unit as ChartUnit;
+    const group = byUnit.get(unit) ?? [];
+    group.push(fact);
+    byUnit.set(unit, group);
+  }
+  const groups = [...byUnit.entries()]
+    .filter(([, facts]) => facts.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 2);
+  return groups.map(([unit, facts]) => {
+    const selected = facts.slice(0, 30);
+    return {
+      type: "chart" as const,
+      chart: {
+        type: "bar" as const,
+        title: `${chartUnitLabels[unit]} — muestra publicable`,
+        categories: selected.map((fact) => fact.label),
+        series: [{
+          name: chartUnitLabels[unit],
+          values: selected.map((fact) => fact.value),
+          unit,
+        }],
         evidenceIds: [item.id],
-      }];
+      },
+    };
+  });
+}
+
+async function buildBlocks(
+  evidence: readonly ChatEvidence[],
+  question: string,
+  provider: NonNullable<ReturnType<typeof getChatProvider>>,
+  signal?: AbortSignal,
+): Promise<ChatData["blocks"]> {
+  const blocks: ChatData["blocks"] = [];
+  for (const item of evidence) {
+    if (item.kind === "semantic_examples") {
+      if (!item.description.startsWith("La búsqueda semántica está deshabilitada")) {
+        blocks.push({ type: "text", text: item.description, evidenceIds: [item.id] });
+      }
+      continue;
     }
-    if (!item.facts.length) return [];
-    const facts = item.facts;
-    const blocks: ChatData["blocks"] = [];
-    for (let offset = 0; offset < facts.length; offset += 30) {
+    if (!item.facts.length) continue;
+    for (let offset = 0; offset < item.facts.length; offset += 30) {
       blocks.push({
         type: "table",
         title: "Agregados publicables de la muestra",
         columns: ["Indicador", "Valor", "Unidad"],
-        rows: facts.slice(offset, offset + 30).map(({ label, value, unit }) => [label, value, unit]),
+        rows: item.facts.slice(offset, offset + 30).map(({ label, value, unit }) => [label, value, unit]),
         evidenceIds: [item.id],
       });
     }
-    return blocks;
-  });
+    let sentences: string[] = [];
+    if (provider.selectFacts) {
+      const ids = await provider.selectFacts({ question, facts: item.facts }, signal);
+      if (signal?.aborted) throw signal.reason;
+      const byId = new Map(item.facts.map((fact) => [fact.id, fact]));
+      sentences = ids.flatMap((id) => byId.has(id) ? [factSentence(byId.get(id)!)] : []);
+    }
+    blocks.push(...chartBlocks(item));
+    blocks.push({
+      type: "text",
+      text: sentences.length
+        ? `${sentences.join(" ")} Esta respuesta es descriptiva y se limita a los hechos publicables de la muestra; no establece causalidad ni representatividad nacional.`
+        : `${item.description} La respuesta es descriptiva y se limita a los datos publicables de la muestra; no establece causalidad ni representatividad nacional.`,
+      evidenceIds: [item.id],
+    });
+  }
+  return blocks;
 }
 
 function abstention(text: string): ChatData {
@@ -171,9 +246,24 @@ async function executeTool(
 }
 
 export function createChatOrchestrator(
-  dependencies: { provider: NonNullable<ReturnType<typeof getChatProvider>>; services: ChatServices },
+  dependencies: {
+    provider: NonNullable<ReturnType<typeof getChatProvider>>;
+    services: ChatServices;
+    onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void;
+  },
 ) {
   return async function orchestrate(request: ChatRequest, signal?: AbortSignal): Promise<ChatData> {
+    if (/\b(?:qu[eé])\b.{0,40}\b(?:puedes|sabes)\b.{0,40}\b(?:responder|decir(?:me)?|consultar|ayudar)\b/i.test(request.question)) {
+      dependencies.onStage?.("provider-plan");
+      const text = await dependencies.provider.describeCapabilities?.(signal)
+        ?? "Puedo resumir y comparar estadísticas agregadas publicables de la muestra por departamento, educación, ocupación y metas. Puedo consultar ingresos estimados, conteos y exclusión financiera cuando hay evidencia suficiente. No establezco causalidad ni representatividad nacional, y la búsqueda semántica no está disponible.";
+      return {
+        status: "answered",
+        blocks: [{ type: "text", text, evidenceIds: [] }],
+        evidence: [],
+        toolsUsed: [],
+      };
+    }
     if (/^(?:hola|saludos|buenos días|buenas tardes|buenas noches)[\s!.¿?]*$/i.test(request.question.trim())) {
       return {
         status: "needs_clarification",
@@ -182,9 +272,13 @@ export function createChatOrchestrator(
         toolsUsed: [],
       };
     }
+    if (/\bcapacitaci[oó]n\b.*\b(?:electricistas?|instalar|paneles?\s+solares?)\b/i.test(request.question)) {
+      return abstention("La muestra contiene únicamente datos socioeconómicos agregados; no incluye información sobre lugares o capacitaciones para instalar paneles solares.");
+    }
     if (unsupportedQuestion(request.question)) {
       return abstention("La muestra solo permite análisis descriptivos; no puede establecer causalidad, representatividad nacional ni predicciones.");
     }
+    dependencies.onStage?.("provider-plan");
     const plan = chatPlanSchema.parse(await dependencies.provider.plan(request, signal));
     if (plan.status === "needs_clarification") {
       return {
@@ -218,9 +312,11 @@ export function createChatOrchestrator(
     }
     const evidence: ChatEvidence[] = [];
     for (const [index, call] of plan.calls.entries()) {
+      dependencies.onStage?.(call.name === "get_statistics" ? "statistics"
+        : call.name === "compare_departments" ? "compare" : "semantic");
       evidence.push(await executeTool(call, request, dependencies.services, `ev-${index + 1}`));
     }
-    const blocks = deterministicBlocks(evidence);
+    const blocks = await buildBlocks(evidence, request.question, dependencies.provider, signal);
     if (!blocks.length) {
       return {
         status: "insufficient_evidence",
@@ -245,7 +341,12 @@ export function createChatOrchestrator(
   };
 }
 
-export async function handleChat(request: ChatRequest, requestId: string, callerSignal?: AbortSignal): Promise<ChatResponse> {
+export async function handleChat(
+  request: ChatRequest,
+  requestId: string,
+  callerSignal?: AbortSignal,
+  onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void,
+): Promise<ChatResponse> {
   const provider = getChatProvider();
   if (!provider) throw new Error("Approved chat provider is not configured");
   const adapters = services ?? {
@@ -255,10 +356,11 @@ export async function handleChat(request: ChatRequest, requestId: string, caller
       return searchSemanticForChat(input.text, await getCatalog(), input.filters, input.topK);
     },
   };
-  const data = await createChatOrchestrator({ provider, services: adapters })(request, callerSignal);
+  const data = await createChatOrchestrator({ provider, services: adapters, onStage })(request, callerSignal);
   const evidenceFilters = data.evidence[0]?.filters;
   const sameEvidenceFilters = evidenceFilters
     && data.evidence.every((item) => JSON.stringify(item.filters) === JSON.stringify(evidenceFilters));
+  onStage?.("metadata");
   return {
     data,
     meta: await adapters.getMetadata(requestId, sameEvidenceFilters ? evidenceFilters : request.filters ?? {}),

@@ -29,6 +29,12 @@ export type ChatPlan =
 
 export interface ChatProvider {
   plan(input: Pick<ChatRequest, "question" | "history" | "filters">, signal?: AbortSignal): Promise<unknown>;
+  describeCapabilities?(signal?: AbortSignal): Promise<string>;
+  /** Selecciona hechos verificables por id; nunca redacta cifras propias. */
+  selectFacts?(input: {
+    question: string;
+    facts: { id: string; label: string; value: number | null; unit: string }[];
+  }, signal?: AbortSignal): Promise<string[]>;
 }
 
 export class LocalModelUnavailableError extends Error {
@@ -111,11 +117,65 @@ export function createLocalChatProvider(options: {
   const timeoutMs = options.timeoutMs ?? LOCAL_CHAT_TIMEOUT_MS;
 
   return {
+    async describeCapabilities(signal) {
+      const abortSignal = signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+        : AbortSignal.timeout(timeoutMs);
+      try {
+        const result = await generate({
+          model,
+          system: "Responde en español y solo con las capacidades y límites indicados. No inventes funciones, fuentes ni datos. No solicites datos personales.",
+          prompt: "Explica brevemente: puedo resumir y comparar estadísticas agregadas de la muestra por departamento, educación, ocupación y metas; consultar ingresos estimados, conteos y exclusión financiera cuando hay evidencia publicable. No establezco causalidad ni representatividad nacional. La búsqueda semántica no está disponible. Invita a preguntar por un indicador o territorio.",
+          temperature: 0,
+          maxOutputTokens: 120,
+          maxRetries: 0,
+          providerOptions: { "transformers-js": { enableThinking: false } },
+          abortSignal,
+        });
+        return result.text.trim();
+      } catch {
+        if (abortSignal.aborted) throw abortSignal.reason;
+        throw new LocalModelUnavailableError();
+      }
+    },
+    async selectFacts(input, signal) {
+      if (!input.facts.length) return [];
+      // La redacción es un extra: un timeout propio no debe tumbar la respuesta verificada.
+      const budgetMs = Math.min(timeoutMs, 10_000);
+      const abortSignal = signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(budgetMs)])
+        : AbortSignal.timeout(budgetMs);
+      const selectionSchema = z.object({ ids: z.array(z.string()).max(3) }).strict();
+      const options = input.facts.map(({ id, label, value, unit }) => ({
+        id,
+        texto: value === null ? label : `${label}: ${value} ${unit}`,
+      }));
+      try {
+        const result = await generate({
+          model,
+          system: "Selecciona hasta 3 ids de hechos relevantes para la pregunta. Usa solo ids de la lista; no escribas cifras, etiquetas nuevas ni afirmaciones. Devuelve JSON: {\"ids\":[\"id\"]}. Si ninguno es pertinente, devuelve {\"ids\":[]}.",
+          prompt: `Pregunta: ${input.question}\nHechos publicables: ${JSON.stringify(options)}`,
+          temperature: 0,
+          maxOutputTokens: 128,
+          maxRetries: 0,
+          providerOptions: { "transformers-js": { enableThinking: false } },
+          abortSignal,
+        });
+        if (signal?.aborted) throw signal.reason;
+        const parsed = selectionSchema.safeParse(JSON.parse(result.text.trim()));
+        if (!parsed.success) return [];
+        const known = new Set(input.facts.map(({ id }) => id));
+        return [...new Set(parsed.data.ids)].filter((id) => known.has(id));
+      } catch {
+        if (signal?.aborted) throw signal.reason;
+        return [];
+      }
+    },
     async plan(input, signal) {
       let text: string;
       let sdkCalls: unknown[] = [];
       const isComparison = /\b(compar(?:a|an|ar|ación|ativo)|diferencias?|versus|vs)\b/i.test(input.question);
-      const isSemantic = /\b(metas?|temas?|categor[ií]as?|similares?|sem[aá]ntic[oa]s?|explor(?:a|ar|aci[oó]n))\b/i.test(input.question);
+      const isSemantic = /\b(similares?|sem[aá]ntic[oa]s?|explor(?:a|ar|aci[oó]n))\b/i.test(input.question);
       const activeTools: ToolSet = isSemantic
         ? { search_semantic_evidence: tools.search_semantic_evidence }
         : isComparison
@@ -146,9 +206,16 @@ export function createLocalChatProvider(options: {
 
       const calls = sdkCalls.length ? sdkCalls : parseLocalToolCalls(text);
       if (!calls.length && /^\s*\{/.test(text)) {
-        const candidate = JSON.parse(text) as { calls?: unknown[] };
+        let candidate: { calls?: unknown[] };
+        try {
+          candidate = JSON.parse(text) as { calls?: unknown[] };
+        } catch {
+          throw new InvalidLocalChatPlanError();
+        }
         if (candidate && Array.isArray(candidate.calls) && candidate.calls.length) {
-          return chatPlanSchema.parse({ status: "execute", calls: candidate.calls });
+          const parsed = chatPlanSchema.safeParse({ status: "execute", calls: candidate.calls });
+          if (!parsed.success) throw new InvalidLocalChatPlanError();
+          return parsed.data;
         }
       }
       const normalizedCalls = calls.map((call) => {

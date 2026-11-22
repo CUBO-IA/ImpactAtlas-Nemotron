@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { ChartSpec } from "@/src/contracts/chat";
+import { formatChartValue } from "@/src/charts/chart-spec";
 
 interface ChartRendererProps {
   spec: ChartSpec;
@@ -20,14 +21,6 @@ export function ChartRenderer({ spec }: ChartRendererProps) {
     "#10b981", // Emerald
     "#8b5cf6", // Purple
   ];
-
-  const formatValue = (val: number | null, unit: string) => {
-    if (val === null) return "N/D";
-    if (unit === "usd_estimated") return `$${val.toFixed(2)}`;
-    if (unit === "percent") return `${val.toFixed(1)}%`;
-    if (unit === "percentage_points") return `${val > 0 ? "+" : ""}${val.toFixed(1)} pp`;
-    return val.toLocaleString("es-SV");
-  };
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs space-y-4 my-2">
@@ -73,7 +66,7 @@ export function ChartRenderer({ spec }: ChartRendererProps) {
                       />
                     </div>
                     <span className="w-24 text-right font-bold text-zinc-800 text-[11px] shrink-0">
-                      {formatValue(val, s.unit)}
+                      {formatChartValue(val, s.unit)}
                     </span>
                   </div>
                 );

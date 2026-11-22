@@ -21,6 +21,7 @@ const json = (body: unknown, status: number, requestId: string) =>
 
 export async function POST(request: Request) {
   const requestId = randomUUID();
+  let stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata" | "request" = "request";
 
   try {
     return await runChatRequest(async (signal) => {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       }
 
       try {
-        return json(await handleChat(parsed.data, requestId, signal), 200, requestId);
+        return json(await handleChat(parsed.data, requestId, signal, (value) => { stage = value; }), 200, requestId);
       } catch (error) {
         if (signal.aborted) throw error;
         if (error instanceof LocalModelUnavailableError) {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
         }
         console.error("Chat dependency failure", {
           requestId,
+          stage,
           errorName: error instanceof Error ? error.name : typeof error,
         });
         return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
@@ -69,6 +71,11 @@ export async function POST(request: Request) {
     if (error instanceof ChatCancelledError) {
       return json({ error: { code: "REQUEST_CANCELLED", message: "La solicitud de chat fue cancelada." }, requestId }, 499, requestId);
     }
+    console.error("Chat dependency failure", {
+      requestId,
+      stage,
+      errorName: error instanceof Error ? error.name : typeof error,
+    });
     return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
   }
 }

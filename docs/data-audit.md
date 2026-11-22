@@ -39,7 +39,7 @@ Existe `public."NemotronSvMuestra"` con 10 columnas, todas `NOT NULL`:
 - Educación: Primaria completa, Primaria incompleta, Secundaria completa, Secundaria incompleta, Sin escolaridad, Técnico, Universitario.
 - Ocupación y metas exactas, sin frecuencias, constan en `src/data/audited-catalog.json`. Los IDs de categorías son slugs mecánicos de los rótulos observados; sus valores SQL conservan el texto físico exacto.
 - No se observó categoría faltante (`NULL`/vacía), por lo que no se incluyó `__missing__` en este catálogo local.
-- `geoFeatureId` usa el ID departamental acordado en el contrato. No existe actualmente GeoJSON local para validar esos IDs contra features; esa verificación queda pendiente.
+- `geoFeatureId` usa el ID departamental acordado en el contrato. Sí existe GeoJSON local: `public/geo/sv-departamentos.geojson` es una `FeatureCollection` de 14 features y sus `properties.departmentId` coinciden exactamente con los 14 IDs de `src/data/audited-catalog.json`. Cada feature declara `source: "Centro Nacional de Registros (CNR), El Salvador"`; el archivo **no declara licencia**. El mapa actual dibuja paths SVG (`src/lib/sv-map-paths.ts`) y no consume el GeoJSON, así que la validación en runtime de esa correspondencia sigue pendiente.
 
 ## Embeddings e índices
 

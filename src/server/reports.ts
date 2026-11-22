@@ -3,6 +3,8 @@ import * as echarts from "echarts";
 import { chromium as playwrightChromium, type Browser } from "playwright-core";
 import type { Filters, MetricId } from "../contracts/common.ts";
 import type { ReportRequest } from "../contracts/reports.ts";
+import type { ChartSpec } from "../contracts/chat.ts";
+import { formatChartValue } from "../charts/chart-spec.ts";
 import { createReportNarrative } from "./report-narrative.ts";
 
 export type ReportSection = "education" | "occupation" | "goals";
@@ -87,6 +89,8 @@ export class ReportCancelledError extends Error {
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 const MAX_PDF_PAGES = 20;
 const MAX_CATEGORIES = 20;
+const MAX_CATEGORY_LABEL_LENGTH = 120;
+const REPORT_ROWS_PER_PAGE = 10;
 const MAX_REPORT_BUDGET_MS = 90_000;
 const MIN_PUBLISHABLE_COUNT = 5;
 const SECTION_LABELS: Readonly<Record<ReportSection, string>> = {
@@ -157,7 +161,7 @@ function validateSnapshot(snapshot: ReportSnapshot, request: ReportRequest): voi
     if (rows.length > MAX_CATEGORIES) {
       throw new ReportLimitError(`La sección ${section} excede el máximo de ${MAX_CATEGORIES} categorías.`);
     }
-    if (rows.some((row) => row.label.length > 36)) {
+    if (rows.some((row) => row.label.length > MAX_CATEGORY_LABEL_LENGTH)) {
       throw new ReportLimitError(`La sección ${section} contiene una categoría demasiado larga.`);
     }
     if (rows.some((row) =>
@@ -226,38 +230,68 @@ export function publishedDistributionMax(rows: readonly ReportCategory[]): numbe
   return Math.max(1, ...rows.filter(isPublishable).map(({ count }) => count!));
 }
 
-function renderChart(rows: readonly ReportCategory[]): string {
-  const publicRows = rows.filter(isPublishable);
+function renderChart(spec: ChartSpec, width = 800): string {
+  const byUnit = Map.groupBy(spec.series, ({ unit }) => unit);
+  if (byUnit.size > 1) {
+    if (byUnit.size > 2) {
+      throw new ReportLimitError("El PDF solo puede mostrar gráficos de hasta dos unidades distintas con legibilidad suficiente.");
+    }
+    const panelWidth = Math.floor((width - 8) / byUnit.size);
+    const panels = [...byUnit].map(([unit, series]) =>
+      renderChart({ ...spec, title: `${spec.title} · ${unit}`, series }, panelWidth),
+    );
+    return `<div style="display:grid;grid-template-columns:repeat(${byUnit.size},minmax(0,1fr));gap:8px;align-items:start">${panels.join("")}</div>`;
+  }
+  const unit = spec.series[0]?.unit ?? "records";
+  const chartHeight = Math.max(260, spec.categories.length * 30);
   const chart = echarts.init(null, null, {
     renderer: "svg",
     ssr: true,
-    width: 800,
-    height: 260,
+    width,
+    height: chartHeight,
     locale: "EN",
   });
   try {
     chart.setOption({
       animation: false,
-      grid: { left: 100, right: 30, top: 12, bottom: 32 },
-      xAxis: { type: "value", min: 0, max: publishedDistributionMax(publicRows), axisLabel: { color: "#4b5d6b" } },
+      color: ["#002b7f", "#ff6a00", "#10b981", "#8b5cf6"],
+      legend: spec.series.length > 1 ? { top: 4, left: 12, textStyle: { color: "#4b5d6b" } } : { show: false },
+      grid: { left: width < 800 ? 125 : 205, right: 75, top: spec.series.length > 1 ? 32 : 12, bottom: 38 },
+      xAxis: {
+        type: "value", min: Math.min(0, ...spec.series.flatMap(({ values }) => values.filter((value): value is number => value !== null))),
+        name: unit === "records" ? "Registros" : unit,
+        nameLocation: "middle", nameGap: 24,
+        axisLabel: {
+          color: "#4b5d6b",
+          formatter: (value: string | number) => formatChartValue(Number(value), unit),
+        },
+      },
       yAxis: {
         type: "category",
         inverse: true,
-        data: publicRows.map((_, index) => `Categoría ${index + 1}`),
-        axisLabel: { color: "#263746" },
+        data: spec.categories.map((category) => safeText(category)),
+        axisLabel: {
+          color: "#263746",
+          width: width < 800 ? 105 : 180,
+          overflow: "break",
+          lineHeight: 13,
+          fontSize: 10,
+        },
       },
-      series: [{
+      series: spec.series.map((item) => ({
         type: "bar",
-        data: publicRows.map(({ count }) => count),
+        name: item.name,
+        data: item.values,
         barMaxWidth: 18,
-        itemStyle: { color: "#167d8d" },
-      }],
+        barGap: spec.type === "grouped_bar" ? "15%" : "30%",
+        label: { show: spec.series.length === 1, position: "right", formatter: ({ value }: { value: number | null }) => formatChartValue(value, item.unit) },
+      })),
     });
     const svg = chart.renderToSVGString({ useViewBox: true });
     if (!svg.startsWith("<svg") || /<(?:script|foreignObject|image|iframe)\b|\b(?:href|xlink:href)\s*=|url\(\s*(?!#)/i.test(svg)) {
       throw new ReportSnapshotError("El SVG generado contiene recursos no permitidos.");
     }
-    return svg;
+    return `<div class="chart-title">${escapeHtml(spec.title)}</div>${svg}`;
   } finally {
     chart.dispose();
   }
@@ -277,6 +311,21 @@ function renderRows(rows: readonly ReportCategory[]): string {
     <td class="numeric">${fmtCount(row)}</td>
     <td class="numeric">${fmtPercent(row)}</td>
   </tr>`).join("");
+}
+
+function renderTable(rows: readonly ReportCategory[]): string {
+  return `<table><thead><tr><th>Categoría</th><th>Registros</th><th>%</th></tr></thead><tbody>${renderRows(rows)}</tbody></table>`;
+}
+
+function sectionPageCount(rows: readonly ReportCategory[]): number {
+  return Math.max(1, Math.ceil(rows.length / REPORT_ROWS_PER_PAGE));
+}
+
+function reportPageCount(request: ReportRequest, snapshot: ReportSnapshot): number {
+  return 1 + request.sections.reduce((count, section) => {
+    if (section === "summary" || section === "ai_analysis") return count;
+    return count + sectionPageCount(snapshot.sections[section]!);
+  }, 0);
 }
 
 function renderPage(title: string, contents: string, continued = false): string {
@@ -317,10 +366,33 @@ function renderHtml(
   for (const section of request.sections) {
     if (section === "summary" || section === "ai_analysis") continue;
     const rows = snapshot.sections[section]!;
-    const content = `<h2>${escapeHtml(SECTION_LABELS[section])}</h2>
-      ${renderChart(rows)}
-      <table><thead><tr><th>Categoría</th><th>Registros</th><th>%</th></tr></thead><tbody>${renderRows(rows)}</tbody></table>`;
-    pages.push(renderPage(SECTION_LABELS[section], content));
+    const publicRows = rows.filter(isPublishable);
+    const chartSpec = {
+      type: "bar",
+      title: SECTION_LABELS[section],
+      categories: publicRows.map(({ label }) => label || "Sin dato"),
+      series: [{
+        name: "Registros",
+        values: publicRows.map(({ count }) => count),
+        unit: "records",
+      }],
+      evidenceIds: [],
+    } satisfies ChartSpec;
+    const [firstPageRows, ...continuedRows] = Array.from(
+      { length: sectionPageCount(rows) },
+      (_, index) => rows.slice(index * REPORT_ROWS_PER_PAGE, (index + 1) * REPORT_ROWS_PER_PAGE),
+    );
+    pages.push(renderPage(
+      SECTION_LABELS[section],
+      `<h2>${escapeHtml(SECTION_LABELS[section])}</h2>${renderChart(chartSpec)}${renderTable(firstPageRows)}`,
+    ));
+    for (const pageRows of continuedRows) {
+      pages.push(renderPage(
+        SECTION_LABELS[section],
+        renderTable(pageRows),
+        true,
+      ));
+    }
   }
   if (pages.length > MAX_PDF_PAGES) throw new ReportLimitError(`El reporte supera el máximo de ${MAX_PDF_PAGES} páginas.`);
 
@@ -338,10 +410,12 @@ function renderHtml(
       p { margin: 2mm 0; line-height: 1.35; }
       ul { margin: 1mm 0 2mm; padding-left: 5mm; }
       li { margin: 1mm 0; }
-      svg { display: block; width: 100%; height: 68mm; }
+      svg { display: block; width: 100%; height: auto; max-height: 150mm; }
       table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+      tr { break-inside: avoid; page-break-inside: avoid; }
       th, td { padding: 2mm; border-bottom: 1px solid #d8e0e8; text-align: left; }
       th { color: #17324d; }
+      td:first-child { overflow-wrap: anywhere; }
       .numeric { text-align: right; }
       footer { position: absolute; bottom: 0; left: 0; right: 0; border-top: 1px solid #d8e0e8; padding-top: 2mm; color: #5d6b78; font-size: 7pt; }
     </style></head><body>${pages.join("")}</body></html>`;
@@ -435,8 +509,7 @@ async function renderReportPdfWithinBudget(
 ): Promise<Uint8Array> {
   throwIfAborted(signal);
   validateSnapshot(snapshot, request);
-  const expectedPages = 1 + request.sections.filter((section) =>
-    section !== "summary" && section !== "ai_analysis").length;
+  const expectedPages = reportPageCount(request, snapshot);
   if (expectedPages > MAX_PDF_PAGES) throw new ReportLimitError("El reporte supera el máximo de 20 páginas.");
   if (request.sections.includes("ai_analysis") && !narrative) {
     narrative = { paragraphs: [], warning: "Análisis IA no disponible; se conserva el reporte estadístico." };

@@ -167,8 +167,8 @@ Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
 - [x] D1-11 — Bloques y evidencias — Evidencia: components/chat/chat-message-list.tsx con bloques de texto, tabla, gráficos y trazabilidad.
 - [x] D1-12 — Fallos y abstención — Evidencia: src/contracts/fase4.test.mjs (4/4 pasados).
 - [x] D1-13 — Configuración y descarga PDF — Evidencia: components/reports/report-configurator.tsx con descarga binaria y revokeObjectURL.
-- [ ] D1-14 — Gráficos compartidos SSR — Pendiente: `src/services/report-generator.ts` contiene un renderizador paralelo que no usa la ruta de reportes elegida; falta integración compartida con `ChartSpec`.
-- [ ] D1-15 — Pruebas de reportes — Pendiente: `src/contracts/fase5.test.mjs` fue añadido, pero no se ha ejecutado; falta verificar recorrido y legibilidad del PDF real.
+- [ ] D1-14 — Gráficos compartidos SSR — Avance: chat y PDF local usan `ChartSpec` y formato de valores compartido; SSR separa hasta dos unidades en paneles y rechaza más de dos. El flujo PDF actual genera una serie de registros; falta verificar la legibilidad de paneles mixtos y cerrar el issue.
+- [ ] D1-15 — Pruebas de reportes — Avance: `src/contracts/fase5.test.mjs` pasó 3/3 con servidor local y se descargó un PDF desde la interfaz; una fixture sintética de 20 categorías verificó tablas continuadas, nulos y supresión tras corregir el recorte. Pendiente cierre y revisión de los criterios restantes del issue.
 - [x] D1-16 — Accesibilidad/rendimiento — Evidencia: navegación por teclado (tabIndex/onKeyDown en SVG), tabla alternativa y roles ARIA.
 - [ ] D1-17 — Regresión E2E — Pendiente: no se encontró evidencia de una suite E2E de 20 pruebas ni resultados de ejecución contra el candidato.
 - [x] D1-18 — Correcciones y guía — Evidencia: interfaz pulida, sin referencias de asignación y compilación de producción exitosa.

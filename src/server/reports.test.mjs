@@ -14,6 +14,7 @@ import { spawnSync } from "node:child_process";
 import { reportErrorResponse } from "./report-http.ts";
 import { InvalidCatalogFilterError } from "../data/catalog.ts";
 import { createReportNarrative } from "./report-narrative.ts";
+import { formatChartValue } from "../charts/chart-spec.ts";
 
 const request = {
   indicators: ["sample_count", "income_mean"],
@@ -52,6 +53,12 @@ const snapshot = {
   warnings: ["Datos sintéticos de prueba."],
 };
 
+test("shared ChartSpec value formatter preserves decimal unit labels", () => {
+  assert.equal(formatChartValue(12.34, "usd_estimated"), "$12.34");
+  assert.equal(formatChartValue(12.34, "percent"), "12.3%");
+  assert.equal(formatChartValue(12.34, "percentage_points"), "+12.3 pp");
+});
+
 test("LFM3 can only select deterministic facts present in the snapshot", async () => {
   let prompt;
   const narrative = await createReportNarrative(request, snapshot, new AbortController().signal, async (input) => {
@@ -84,6 +91,8 @@ test("renders a bounded PDF from a synthetic, already-aggregated snapshot", asyn
   if (extracted.error?.code !== "ENOENT") {
     assert.equal(extracted.status, 0, extracted.stderr);
     assert.match(extracted.stdout, /Análisis IA no disponible; se conserva el reporte estadístico/);
+    assert.match(extracted.stdout, /Educación básica/);
+    assert.match(extracted.stdout, /Registros/);
   }
 });
 
@@ -109,6 +118,59 @@ test("rejects category counts over 20 rather than omitting rows", async () => {
     ),
     ReportLimitError,
   );
+});
+
+test("keeps all 20 valid category rows visible in the rendered PDF", async (t) => {
+  const categories = Array.from({ length: 20 }, (_, index) => ({
+    label: `Fila categoría ${String(index + 1).padStart(2, "0")}`,
+    count: 20 - index,
+    percent: 5,
+    suppressed: false,
+  }));
+  const pdf = await renderReportPdf(
+    { ...request, sections: ["education"] },
+    { ...snapshot, sections: { education: categories } },
+  );
+  const extracted = spawnSync("pdftotext", ["-", "-"], {
+    input: Buffer.from(pdf),
+    encoding: "utf8",
+  });
+  if (extracted.error?.code === "ENOENT") {
+    t.skip("pdftotext unavailable; PDF generation succeeded but category visibility could not be verified.");
+    return;
+  }
+  assert.equal(extracted.status, 0, extracted.stderr);
+  for (const { label } of categories) {
+    assert.ok(extracted.stdout.includes(label), `PDF text omitted ${label}`);
+  }
+});
+
+test("preserves long-table continuation, Spanish text, suppression, and filters in one snapshot PDF", async (t) => {
+  const filters = { departmentIds: ["san-salvador"] };
+  const categories = Array.from({ length: 20 }, (_, index) => ({
+    label: index === 0 ? "Educación básica" : `Fila ${String(index + 1).padStart(2, "0")}`,
+    count: index === 1 ? null : index + 1,
+    percent: index === 1 ? null : 5,
+    suppressed: index === 1,
+  }));
+  const pdf = await renderReportPdf(
+    { ...request, filters, sections: ["education"] },
+    { ...snapshot, appliedFilters: filters, sections: { education: categories } },
+  );
+  const extracted = spawnSync("pdftotext", ["-", "-"], {
+    input: Buffer.from(pdf),
+    encoding: "utf8",
+  });
+  if (extracted.error?.code === "ENOENT") {
+    t.skip("pdftotext unavailable; PDF generation succeeded but text extraction could not be verified.");
+    return;
+  }
+  assert.equal(extracted.status, 0, extracted.stderr);
+  assert.match(extracted.stdout, /Educación básica/);
+  assert.match(extracted.stdout, /Departamentos: san salvador/);
+  assert.match(extracted.stdout, /Suprimido/);
+  assert.match(extracted.stdout, /Fila 20/);
+  assert.match(extracted.stdout, /Educación — continuación/);
 });
 
 test("rejects excessive warnings rather than silently dropping them", async () => {

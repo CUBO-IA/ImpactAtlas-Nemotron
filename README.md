@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Estado de la implementación
+
+Consulta el [inventario de implementación y pendientes](docs/implementation-inventory.md) para conocer qué está implementado, qué está parcial y qué permanece bloqueado.
+
 ## Base de datos y migración del CSV
 
 La base usa PostgreSQL 17 con pgvector (`docker-compose.yml`). El esquema y

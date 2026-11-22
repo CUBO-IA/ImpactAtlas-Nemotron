@@ -35,17 +35,20 @@ export function DepartmentTable({
     return {
       id: dept.id,
       label: dept.label,
-      sample_count: metrics?.sample_count?.value ?? null,
-      income_mean: metrics?.income_mean?.value ?? null,
-      income_median: metrics?.income_median?.value ?? null,
-      financial_exclusion_pct: metrics?.financial_exclusion_pct?.value ?? null,
-      suppressed: metrics?.financial_exclusion_pct?.suppressed ?? false,
+      sample_count: metrics?.sample_count,
+      income_mean: metrics?.income_mean,
+      income_median: metrics?.income_median,
+      financial_exclusion_pct: metrics?.financial_exclusion_pct,
     };
   });
 
   rows.sort((a, b) => {
-    let valA = a[sortField];
-    let valB = b[sortField];
+    let valA = sortField === "label"
+      ? a.label
+      : a[sortField]?.suppressed ? null : a[sortField]?.value ?? null;
+    let valB = sortField === "label"
+      ? b.label
+      : b[sortField]?.suppressed ? null : b[sortField]?.value ?? null;
     if (valA === null) valA = sortAsc ? Infinity : -Infinity;
     if (valB === null) valB = sortAsc ? Infinity : -Infinity;
 
@@ -143,34 +146,34 @@ export function DepartmentTable({
               return (
                 <tr
                   key={row.id}
-                  onClick={() => onSelectDepartment(isSelected ? null : (row.id as DepartmentId))}
-                  className={`transition-colors cursor-pointer hover:bg-zinc-50/80 ${
+                  className={`transition-colors hover:bg-zinc-50/80 ${
                     isSelected ? "bg-blue-50/70 font-semibold text-[#002b7f]" : "text-zinc-800"
                   }`}
                 >
-                  <td className="py-2.5 px-3 flex items-center gap-2">
+                  <td className="py-2.5 px-3">
+                    <button
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => onSelectDepartment(isSelected ? null : (row.id as DepartmentId))}
+                      className="inline-flex items-center gap-2 text-left hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b7f]"
+                    >
                     {isSelected && <Check className="size-3.5 text-[#002b7f]" />}
                     <span>{row.label}</span>
+                    </button>
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono">
-                    {row.suppressed ? (
-                      <span className="text-zinc-400 italic">(&lt;5)</span>
-                    ) : row.sample_count !== null ? (
-                      row.sample_count.toLocaleString()
-                    ) : (
-                      "—"
-                    )}
+                    {row.sample_count?.suppressed ? "Suprimido" : row.sample_count?.value?.toLocaleString() ?? "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono">
-                    {row.income_mean !== null ? `$${row.income_mean.toFixed(2)}` : "—"}
+                    {row.income_mean?.suppressed ? "Suprimido" : row.income_mean?.value !== null && row.income_mean?.value !== undefined ? `$${row.income_mean.value.toFixed(2)}` : "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono">
-                    {row.income_median !== null ? `$${row.income_median.toFixed(2)}` : "—"}
+                    {row.income_median?.suppressed ? "Suprimido" : row.income_median?.value !== null && row.income_median?.value !== undefined ? `$${row.income_median.value.toFixed(2)}` : "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono">
-                    {row.financial_exclusion_pct !== null ? (
+                    {row.financial_exclusion_pct?.suppressed ? "Suprimido" : row.financial_exclusion_pct?.value !== null && row.financial_exclusion_pct?.value !== undefined ? (
                       <span className="font-semibold text-[#ff6a00]">
-                        {row.financial_exclusion_pct.toFixed(1)}%
+                        {row.financial_exclusion_pct.value.toFixed(1)}%
                       </span>
                     ) : (
                       "—"
@@ -179,10 +182,7 @@ export function DepartmentTable({
                   <td className="py-2.5 px-3 text-center">
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectDepartment(isSelected ? null : (row.id as DepartmentId));
-                      }}
+                      onClick={() => onSelectDepartment(isSelected ? null : (row.id as DepartmentId))}
                       className={`rounded-lg px-2 py-0.5 text-[11px] font-medium transition-colors ${
                         isSelected
                           ? "bg-[#002b7f] text-white"

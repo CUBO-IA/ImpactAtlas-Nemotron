@@ -56,12 +56,19 @@ export function ReportConfigurator({ filters, onChangeFilters }: { filters: Filt
       const blob = await response.blob();
       if (blob.size > 10 * 1024 * 1024) throw new Error("El PDF supera el límite de 10 MiB.");
       objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a"); link.href = objectUrl; link.download = "impactatlas-reporte.pdf"; link.click();
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "impactatlas-reporte.pdf";
+      link.click();
+      link.remove();
       setMessage("Descarga iniciada.");
     } catch (cause) {
       if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : "Error durante la generación del reporte.");
     } finally {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (objectUrl) {
+        const url = objectUrl;
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      }
       setController(undefined); setBusy(false);
     }
   }
@@ -96,7 +103,7 @@ export function ReportConfigurator({ filters, onChangeFilters }: { filters: Filt
     <div className="grid gap-6 md:grid-cols-2">
       {[{ title: "Indicadores Estadísticos", items: metrics.map((id) => ({ id, label: catalog?.indicators.find((item) => item.id === id)?.label ?? id })) , selected: selectedMetrics, update: setSelectedMetrics, max: 4 }, { title: "Secciones del Informe", items: sections.map((id) => ({ id, label: sectionLabels[id] })), selected: selectedSections, update: setSelectedSections, max: 5 }].map((group, index) => <div key={group.title} className="glass-surface hud-bracket space-y-3 rounded-3xl p-6 shadow-sm">
         <h2 className="border-b border-zinc-200/60 pb-3 text-sm font-extrabold">{group.title} <span className="font-mono text-xs text-[#002b7f]">{group.selected.length} / {group.max}</span></h2>
-        {group.items.map((item) => <button key={item.id} type="button" onClick={() => toggle(group.selected, item.id, (next) => group.update(next as never), group.max)} className="flex w-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 p-3 text-left text-xs font-bold hover:border-blue-300">
+        {group.items.map((item) => <button key={item.id} type="button" aria-pressed={group.selected.includes(item.id as never)} onClick={() => toggle(group.selected, item.id, (next) => group.update(next as never), group.max)} className="flex w-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 p-3 text-left text-xs font-bold hover:border-blue-300">
           {group.selected.includes(item.id as never) ? <CheckSquare className={index ? "size-4 text-[#ff6a00]" : "size-4 text-[#002b7f]"} /> : <Square className="size-4 text-zinc-300" />}{item.label}
         </button>)}
       </div>)}

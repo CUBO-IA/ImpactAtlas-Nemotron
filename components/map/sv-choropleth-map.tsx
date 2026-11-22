@@ -95,7 +95,7 @@ export function SvChoroplethMap({
           <div className="flex items-center gap-2 mb-1">
             <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-              GIS Vectorial · EPSG:4326 · 14 Departamentos
+              SVG local · 14 departamentos
             </span>
           </div>
           <h2 className="text-base font-extrabold text-zinc-950 flex items-center gap-2">
