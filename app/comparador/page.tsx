@@ -232,6 +232,7 @@ function ComparadorContent({ query }: { query: string }) {
   const chatParams = filterSearchParams(filters);
   if (selectedDepts.length) chatParams.set("depts", selectedDepts.join(","));
   const chatHref = `/chat${chatParams.size ? `?${chatParams.toString()}` : ""}`;
+  const reportHref = `/reportes${chatParams.size ? `?${chatParams.toString()}` : ""}`;
 
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
@@ -268,7 +269,7 @@ function ComparadorContent({ query }: { query: string }) {
               Chat Asistente
             </Link>
             <Link
-              href="#reportes"
+              href={reportHref}
               className="transition-colors hover:text-[#002b7f]"
             >
               Reportes Ejecuto-Descargables

@@ -10,6 +10,7 @@ import type { ChatResponse } from "@/src/contracts/chat";
 import { ChatMessageList, type Message } from "@/components/chat/chat-message-list";
 import { ChatInput } from "@/components/chat/chat-input";
 import { FilterBar } from "@/components/filters/filter-bar";
+import { filterSearchParams } from "@/src/lib/filter-url";
 import {
   Bot,
   SlidersHorizontal,
@@ -171,6 +172,9 @@ function ChatContent() {
     (filters.educationIds?.length ?? 0) +
     (filters.occupationIds?.length ?? 0) +
     (filters.goalIds?.length ?? 0);
+  const reportParams = filterSearchParams(filters);
+  if (filters.departmentIds?.length) reportParams.set("depts", filters.departmentIds.join(","));
+  const reportHref = `/reportes${reportParams.size ? `?${reportParams.toString()}` : ""}`;
 
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
@@ -200,7 +204,7 @@ function ChatContent() {
             >
               Chat Asistente IA
             </Link>
-            <Link href="#reportes" className="transition-colors hover:text-[#002b7f]">
+            <Link href={reportHref} className="transition-colors hover:text-[#002b7f]">
               Reportes PDF
             </Link>
           </nav>

@@ -51,7 +51,7 @@ export default function Home() {
               Asistente IA
             </Link>
             <Link
-              href="#reportes"
+              href="/reportes"
               className="transition-colors hover:text-[#002b7f]"
             >
               Reportes PDF
@@ -247,7 +247,7 @@ export default function Home() {
               </Link>
 
               {/* Function 4: Reportes */}
-              <div id="reportes" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">
+              <Link href="/reportes" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">
                 <div>
                   <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] transition-transform group-hover:scale-105">
                     <FileText className="size-6" />
@@ -263,7 +263,7 @@ export default function Home() {
                   <span>Exportación ejecutiva</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </section>

@@ -215,6 +215,7 @@ function ExploradorContent({ query }: { query: string }) {
   const chatParams = filterSearchParams(filters);
   if (selectedDepartment) chatParams.set("depts", selectedDepartment);
   const chatHref = `/chat${chatParams.size ? `?${chatParams.toString()}` : ""}`;
+  const reportHref = `/reportes${chatParams.size ? `?${chatParams.toString()}` : ""}`;
   const comparisonDepartments = selectedDepartment
     ? [selectedDepartment, selectedDepartment === "san-salvador" ? "santa-ana" : "san-salvador"]
     : ["san-salvador", "santa-ana"];
@@ -251,7 +252,7 @@ function ExploradorContent({ query }: { query: string }) {
             <Link href={chatHref} className="transition-colors hover:text-[#002b7f]">
               Asistente IA
             </Link>
-            <Link href="/#reportes" className="transition-colors hover:text-[#002b7f]">
+            <Link href={reportHref} className="transition-colors hover:text-[#002b7f]">
               Reportes PDF
             </Link>
           </nav>
