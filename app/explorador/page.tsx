@@ -242,7 +242,7 @@ function ExploradorContent() {
             <Link href="/chat" className="transition-colors hover:text-[#002b7f]">
               Asistente IA
             </Link>
-            <Link href="/#reportes" className="transition-colors hover:text-[#002b7f]">
+            <Link href="/reportes" className="transition-colors hover:text-[#002b7f]">
               Reportes PDF
             </Link>
           </nav>

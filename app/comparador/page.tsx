@@ -238,10 +238,10 @@ function ComparadorContent() {
               Chat Asistente
             </Link>
             <Link
-              href="#reportes"
+              href="/reportes"
               className="transition-colors hover:text-[#002b7f]"
             >
-              Reportes Ejecuto-Descargables
+              Reportes PDF
             </Link>
           </nav>
           <div className="flex items-center gap-3">

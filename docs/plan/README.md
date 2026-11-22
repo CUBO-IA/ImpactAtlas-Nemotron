@@ -62,12 +62,12 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 
 ### Checkpoints globales
 
-- [ ] I-01 — Contratos y definiciones de datos acordados.
-- [ ] I-02 — Mapa conectado a estadísticas reales.
-- [ ] I-03 — Comparador integrado y compatibilidad vectorial/proveedor comprobada.
-- [ ] I-04 — Chat respaldado por herramientas, sin SQL libre.
-- [ ] I-05 — Reporte PDF íntegro y consistente con los filtros.
-- [ ] I-06 — MVP verificado y publicado.
+- [x] I-01 — Contratos y definiciones de datos acordados.
+- [x] I-02 — Mapa conectado a estadísticas reales.
+- [x] I-03 — Comparador integrado y compatibilidad vectorial/proveedor comprobada.
+- [x] I-04 — Chat respaldado por herramientas, sin SQL libre.
+- [x] I-05 — Reporte PDF íntegro y consistente con los filtros.
+- [x] I-06 — MVP verificado y publicado.
 
 ## 6. Regla de cierre de cualquier issue
 
