@@ -37,7 +37,10 @@ function ReportesContent() {
     if (filters.income?.min !== undefined) query.set("minIncome", String(filters.income.min));
     if (filters.income?.max !== undefined) query.set("maxIncome", String(filters.income.max));
     const search = query.toString();
-    router.replace(search ? `/reportes?${search}` : "/reportes", { scroll: false });
+    const targetSearch = search ? `?${search}` : "";
+    if (window.location.search !== targetSearch) {
+      router.replace(`/reportes${targetSearch}`, { scroll: false });
+    }
   }, [filters, router]);
 
   return (

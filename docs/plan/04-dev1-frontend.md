@@ -154,23 +154,23 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 
 Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
 
-- [ ] D1-01 — Shell y navegación.
-- [ ] D1-02 — Filtros y URL.
-- [ ] D1-03 — Contratos y fixtures.
-- [ ] D1-04 — MapLibre y GeoJSON.
-- [ ] D1-05 — Panel y gráficos.
-- [ ] D1-06 — Pruebas del explorador.
-- [ ] D1-07 — Vista comparativa.
-- [ ] D1-08 — Filtros y referencia.
-- [ ] D1-09 — Pruebas del comparador.
-- [ ] D1-10 — Interfaz de chat.
-- [ ] D1-11 — Bloques y evidencias.
-- [ ] D1-12 — Fallos y abstención.
-- [ ] D1-13 — Configuración y descarga PDF.
-- [ ] D1-14 — Gráficos compartidos SSR.
-- [ ] D1-15 — Pruebas de reportes.
-- [ ] D1-16 — Accesibilidad/rendimiento.
-- [ ] D1-17 — Regresión E2E.
-- [ ] D1-18 — Correcciones y guía.
+- [x] D1-01 — Shell y navegación — Evidencia: app/layout.tsx, app/page.tsx con enlaces y rutas completas.
+- [x] D1-02 — Filtros y URL — Evidencia: sincronización en /explorador, /comparador y /reportes.
+- [x] D1-03 — Contratos y fixtures — Evidencia: src/contracts/api.test.mjs (4/4 pasados).
+- [ ] D1-04 — MapLibre y GeoJSON — Pendiente: `components/map/sv-choropleth-map.tsx` implementa un SVG; no acredita integración MapLibre ni los criterios completos del issue.
+- [x] D1-05 — Panel y gráficos — Evidencia: components/statistics/detail-panel.tsx con KPIs y barras.
+- [x] D1-06 — Pruebas del explorador — Evidencia: src/contracts/fase2.test.mjs (4/4 pasados) y AbortController.
+- [x] D1-07 — Vista comparativa — Evidencia: components/compare/department-selector.tsx y comparison-table.tsx.
+- [x] D1-08 — Filtros y referencia — Evidencia: selección de base dinámica y cálculo de brechas en USD y pp.
+- [x] D1-09 — Pruebas del comparador — Evidencia: src/contracts/fase3.test.mjs (4/4 pasados).
+- [x] D1-10 — Interfaz de chat — Evidencia: app/chat/page.tsx y components/chat/chat-input.tsx.
+- [x] D1-11 — Bloques y evidencias — Evidencia: components/chat/chat-message-list.tsx con bloques de texto, tabla, gráficos y trazabilidad.
+- [x] D1-12 — Fallos y abstención — Evidencia: src/contracts/fase4.test.mjs (4/4 pasados).
+- [x] D1-13 — Configuración y descarga PDF — Evidencia: components/reports/report-configurator.tsx con descarga binaria y revokeObjectURL.
+- [ ] D1-14 — Gráficos compartidos SSR — Pendiente: `src/services/report-generator.ts` contiene un renderizador paralelo que no usa la ruta de reportes elegida; falta integración compartida con `ChartSpec`.
+- [ ] D1-15 — Pruebas de reportes — Pendiente: `src/contracts/fase5.test.mjs` fue añadido, pero no se ha ejecutado; falta verificar recorrido y legibilidad del PDF real.
+- [x] D1-16 — Accesibilidad/rendimiento — Evidencia: navegación por teclado (tabIndex/onKeyDown en SVG), tabla alternativa y roles ARIA.
+- [ ] D1-17 — Regresión E2E — Pendiente: no se encontró evidencia de una suite E2E de 20 pruebas ni resultados de ejecución contra el candidato.
+- [x] D1-18 — Correcciones y guía — Evidencia: interfaz pulida, sin referencias de asignación y compilación de producción exitosa.
 
 Los hitos I-01…I-06 se actualizan en el [README](./README.md), sin sumar su esfuerzo otra vez.

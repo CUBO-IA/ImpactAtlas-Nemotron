@@ -42,7 +42,7 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 
 | Área | Responsable principal | Revisión/apoyo |
 | --- | --- | --- |
-| Interfaz, filtros, MapLibre, ECharts y accesibilidad | Dev 1 | Dev 2 revisa semántica de datos. |
+| Interfaz, filtros, MapLibre, ECharts y accesibilidad | Dev 1 | Dev 2 revisa semántica de datos; el trabajo nuevo del frontend se sigue en [04-dev1-frontend.md](./04-dev1-frontend.md). |
 | Contratos compartidos y fixtures | Ambos mantienen los esquemas Zod; Dev 1 prepara fixtures | Dev 2 valida entradas/salidas reales. |
 | PostgreSQL, consultas, validaciones y endpoints | Dev 2 | Dev 1 prueba contratos y experiencia de error. |
 | Herramientas IA, LFM3 local, vectores y PDF | Dev 2 | Dev 1 integra bloques y verifica presentación. |
