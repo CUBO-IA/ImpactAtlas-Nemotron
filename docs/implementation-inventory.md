@@ -19,7 +19,7 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 | Área | Estado global | Evidencia / principal límite |
 | --- | --- | --- |
 | Auditoría de datos | Auditoría local documentada | `docs/data-audit.md`; solo aplica a la instancia local observada. No prueba el entorno de despliegue. |
-| Explorador | Implementado parcialmente | Página, estadísticas y SVG local; no equivale a MapLibre ni prueba fuente/licencia/IDs de geometrías. |
+| Explorador | Implementado parcialmente | Página, estadísticas y mapa MapLibre con GeoJSON local (14 IDs verificados, sin tiles); falta licencia de geometrías y evidencia en candidato. |
 | Comparador | Implementado en UI/API | Pantalla, selector, tabla y endpoint; aceptación cruzada real y evidencia E2E no cerradas. |
 | Chat LFM3 local | Implementación presente, integración/aceptación no resueltas | Proveedor y orquestador existen; disponibilidad del modelo, grounding completo y comportamiento actual no validados. |
 | Búsqueda semántica | Desactivada por defecto; compatibilidad bloqueada | Requiere dos variables explícitas; auditoría no confirmó procedencia ni relevancia de embeddings. |
@@ -34,13 +34,13 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 
 - Rutas de exploración bajo `app/explorador/page.tsx`; shell, filtros/contexto compartido y estado de URL descritos en `docs/plan/04-dev1-frontend.md`.
 - Panel de estadísticas (`components/statistics/detail-panel.tsx`) y tabla alternativa (`components/map/department-table.tsx`).
-- `components/map/sv-choropleth-map.tsx` dibuja geometrías con SVG; incluye navegación por teclado según el plan.
+- `components/map/sv-choropleth-map.tsx` dibuja las 14 geometrías con MapLibre desde `/geo/sv-departamentos.geojson`, sin proveedor de tiles; selector de indicador, leyenda y tabla accesible como alternativa.
 - API y lógica de estadísticas: `app/api/statistics/route.ts`, `src/server/statistics.ts`, `src/db/queries/statistics.ts`.
 
 **Parcial / no verificado**
 
 - El mapa usa MapLibre 6.19 con el GeoJSON local como `source` y un estilo sin tiles ni servicios externos (`components/map/sv-choropleth-map.tsx`). La selección por mapa y la tabla accesible son equivalentes. D1-04 sigue sin cerrar en el plan porque la licencia de las geometrías no está declarada en el GeoJSON.
-- Existe `public/geo/sv-departamentos.geojson` (`FeatureCollection` de 14 features). Verificado localmente: sus `properties.departmentId` coinciden con los 14 IDs de `src/data/audited-catalog.json` y declaran `source: "Centro Nacional de Registros (CNR), El Salvador"`; **no declaran licencia**. El SVG actual no consume el archivo. `docs/data-audit.md` ya refleja este hallazgo.
+- Existe `public/geo/sv-departamentos.geojson` (`FeatureCollection` de 14 features). Verificado localmente: sus `properties.departmentId` coinciden con los 14 IDs de `src/data/audited-catalog.json` y declaran `source: "Centro Nacional de Registros (CNR), El Salvador"`; **no declaran licencia**. MapLibre consume el archivo directamente. `docs/data-audit.md` ya refleja este hallazgo.
 - `docs/plan/04-dev1-frontend.md` registra D1-05 y D1-06 como completados con referencias a código/pruebas locales; no se verificó aquí la ejecución actual ni el endpoint de un candidato.
 
 ### Comparador
