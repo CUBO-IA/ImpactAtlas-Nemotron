@@ -55,23 +55,26 @@ export function DepartmentTable({
   });
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-100">
+    <div className="glass-surface hud-bracket rounded-3xl p-6 shadow-sm transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-200/60">
         <div>
-          <h3 className="text-base font-bold text-zinc-950">
-            Vista Tabular Accesible de Departamentos
-          </h3>
-          <p className="text-xs text-zinc-500">
-            Alternativa tabular para consulta accesible de las métricas departamentales.
+          <div className="flex items-center gap-2">
+            <span className="flex size-2 rounded-full bg-[#002b7f]" />
+            <h3 className="text-base font-extrabold text-zinc-950">
+              Vista Tabular de Departamentos
+            </h3>
+          </div>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Alternativa accesible para consulta tabular de las métricas departamentales.
           </p>
         </div>
         {selectedDepartment && (
           <button
             type="button"
             onClick={() => onSelectDepartment(null)}
-            className="text-xs text-[#ff6a00] hover:underline self-start sm:self-auto"
+            className="text-xs font-semibold text-[#ff6a00] hover:underline self-start sm:self-auto"
           >
-            Deseleccionar filtro departamental
+            Restablecer selección nacional
           </button>
         )}
       </div>
@@ -79,7 +82,7 @@ export function DepartmentTable({
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-zinc-200 text-zinc-500 font-semibold bg-zinc-50/50">
+            <tr className="border-b border-zinc-200/80 text-zinc-600 font-mono text-[11px] font-bold uppercase tracking-wider bg-zinc-50/70">
               <th className="py-2.5 px-3">
                 <button
                   type="button"

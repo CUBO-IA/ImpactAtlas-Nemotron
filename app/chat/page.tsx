@@ -1,7 +1,6 @@
 "use client";
 
 import React, { Suspense, useState, useRef, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Filters } from "@/src/contracts/common";
@@ -11,6 +10,8 @@ import { ChatMessageList, type Message } from "@/components/chat/chat-message-li
 import { ChatInput } from "@/components/chat/chat-input";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { filterSearchParams } from "@/src/lib/filter-url";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import {
   Bot,
   SlidersHorizontal,
@@ -177,62 +178,17 @@ function ChatContent() {
   const reportHref = `/reportes${reportParams.size ? `?${reportParams.toString()}` : ""}`;
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="Logo ImpactAtlas"
-              width={140}
-              height={36}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </Link>
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-zinc-600 md:flex">
-            <Link href="/explorador" className="transition-colors hover:text-[#002b7f]">
-              Explorador y Mapa
-            </Link>
-            <Link href="/comparador" className="transition-colors hover:text-[#002b7f]">
-              Comparador Departamental
-            </Link>
-            <Link
-              href="/chat"
-              className="text-[#002b7f] font-bold border-b-2 border-[#002b7f] py-5"
-            >
-              Chat Asistente IA
-            </Link>
-            <Link href={reportHref} className="transition-colors hover:text-[#002b7f]">
-              Reportes PDF
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                activeFiltersCount > 0
-                  ? "border-[#002b7f] bg-blue-50 text-[#002b7f]"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"
-              }`}
-            >
-              <SlidersHorizontal className="size-3.5" />
-              <span>Filtros de Contexto</span>
-              {activeFiltersCount > 0 && (
-                <span className="size-4 rounded-full bg-[#002b7f] text-[10px] text-white flex items-center justify-center font-bold">
-                  {activeFiltersCount}
-                </span>
-              )}
-              {showFilters ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <div className="flex min-h-screen flex-col bg-white text-zinc-900 font-sans">
+      <SiteHeader />
       {/* Main Container */}
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 space-y-6">
+      <main className="relative mx-auto w-full max-w-4xl flex-1 px-6 py-8 sm:px-8 space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-200/60 pb-4">
+          <h1 className="text-2xl font-bold text-zinc-950">Chat & Consultas</h1>
+          <button type="button" onClick={() => setShowFilters(!showFilters)} className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700">
+            <SlidersHorizontal className="size-3.5" /> Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+            {showFilters ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          </button>
+        </div>
         {/* Context Filters Collapsible Drawer */}
         {showFilters && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-200">
@@ -245,6 +201,8 @@ function ChatContent() {
           </div>
         )}
 
+        <div className="flex justify-end"><Link href={reportHref} className="text-xs font-semibold text-[#002b7f] hover:underline">Abrir reportes con estos filtros</Link></div>
+
         {/* Hero badge */}
         <div className="flex items-center justify-between border-b border-zinc-200/80 pb-3">
           <div className="flex items-center gap-2 text-xs font-bold text-[#002b7f]">
@@ -254,7 +212,7 @@ function ChatContent() {
           <span className="text-[11px] text-zinc-500">
             {activeFiltersCount > 0
               ? `${activeFiltersCount} filtro(s) activo(s) aplicados a las consultas`
-              : "Sin filtros restrictivos (muestra nacional completa)"}
+              : "Sin filtros departamentales activos"}
           </span>
         </div>
 
@@ -284,18 +242,7 @@ function ChatContent() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-4 mt-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-zinc-900">ImpactAtlas</span>
-            <span>• Asistente con evidencia controlada</span>
-          </div>
-          <p className="text-[11px] text-zinc-400">
-            Las respuestas pueden ser incompletas; verifica las fuentes antes de tomar decisiones.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

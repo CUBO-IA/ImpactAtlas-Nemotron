@@ -1,8 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import { departmentIdSchema, type Filters } from "@/src/contracts/common";
 import { ReportConfigurator } from "@/components/reports/report-configurator";
 
@@ -15,9 +16,9 @@ function readFilters(params: URLSearchParams): Filters {
   const min = params.get("minIncome");
   const max = params.get("maxIncome");
   if (departments) filters.departmentIds = departments.split(",").filter((id) => departmentIdSchema.safeParse(id).success) as NonNullable<Filters["departmentIds"]>;
-  if (education) filters.educationIds = education.split(",");
-  if (occupation) filters.occupationIds = occupation.split(",");
-  if (goals) filters.goalIds = goals.split(",");
+  if (education) filters.educationIds = education.split(",").filter(Boolean);
+  if (occupation) filters.occupationIds = occupation.split(",").filter(Boolean);
+  if (goals) filters.goalIds = goals.split(",").filter(Boolean);
   if (min || max) filters.income = { min: min ? Number(min) : undefined, max: max ? Number(max) : undefined };
   return filters;
 }
@@ -36,32 +37,28 @@ function ReportesContent() {
     if (filters.goalIds?.length) query.set("goal", filters.goalIds.join(","));
     if (filters.income?.min !== undefined) query.set("minIncome", String(filters.income.min));
     if (filters.income?.max !== undefined) query.set("maxIncome", String(filters.income.max));
-    const search = query.toString();
-    const targetSearch = search ? `?${search}` : "";
-    if (window.location.search !== targetSearch) {
-      router.replace(`/reportes${targetSearch}`, { scroll: false });
-    }
+    const targetSearch = query.toString() ? `?${query}` : "";
+    if (window.location.search !== targetSearch) router.replace(`/reportes${targetSearch}`, { scroll: false });
   }, [filters, router]);
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <nav className="flex gap-5 text-sm">
-          <Link href="/" className="font-semibold text-blue-900">ImpactAtlas</Link>
-          <Link href="/explorador">Explorador</Link>
-          <Link href="/comparador">Comparador</Link>
-          <Link href="/chat">Chat</Link>
-        </nav>
-        <header>
-          <p className="text-xs font-bold uppercase tracking-wider text-orange-600">Reportes PDF</p>
-          <h1 className="mt-2 text-3xl font-bold">Configurar reporte estadístico</h1>
-          <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-            El reporte usa el catálogo auditado y los datos disponibles. Ingresos estimados; la muestra no necesariamente representa a El Salvador.
+    <div className="relative flex min-h-screen flex-col bg-white font-sans text-zinc-900 selection:bg-[#ff6a00] selection:text-white">
+      <SiteHeader />
+      <main className="relative mx-auto w-full max-w-5xl flex-1 space-y-6 px-6 py-8 sm:px-8">
+        <div className="pointer-events-none absolute inset-0 bg-tech-dots opacity-30" />
+        <header className="relative border-b border-zinc-200/60 pb-5">
+          <div className="mb-1.5 inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-orange-50/70 px-3.5 py-1 text-xs font-semibold text-[#ff6a00] shadow-2xs">
+            <span className="font-mono text-[11px] uppercase tracking-wide">Generación de reportes PDF</span>
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">Generador de Reportes Ejecutivos</h1>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-zinc-600 sm:text-sm">
+            Configura indicadores, filtros y secciones. Ingresos estimados; la muestra no necesariamente representa a El Salvador.
           </p>
         </header>
         <ReportConfigurator filters={filters} onChangeFilters={setFilters} />
-      </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }
 

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import { SvChoroplethMap, type ActiveMapMetric } from "@/components/map/sv-choropleth-map";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { DetailPanel } from "@/components/statistics/detail-panel";
@@ -216,6 +217,9 @@ function ExploradorContent({ query }: { query: string }) {
   if (selectedDepartment) chatParams.set("depts", selectedDepartment);
   const chatHref = `/chat${chatParams.size ? `?${chatParams.toString()}` : ""}`;
   const reportHref = `/reportes${chatParams.size ? `?${chatParams.toString()}` : ""}`;
+  const explorerParams = filterSearchParams(filters);
+  if (selectedDepartment) explorerParams.set("dept", selectedDepartment);
+  const explorerHref = `/explorador${explorerParams.size ? `?${explorerParams.toString()}` : ""}`;
   const comparisonDepartments = selectedDepartment
     ? [selectedDepartment, selectedDepartment === "san-salvador" ? "santa-ana" : "san-salvador"]
     : ["san-salvador", "santa-ana"];
@@ -224,24 +228,13 @@ function ExploradorContent({ query }: { query: string }) {
   const compareHref = `/comparador?${compareParams.toString()}`;
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50/50 text-zinc-900 selection:bg-orange-500 selection:text-white">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-6 sm:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="ImpactAtlas Logo"
-              width={150}
-              height={50}
-              priority
-              className="h-9 w-auto object-contain"
-            />
-          </Link>
+    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative">
+      {/* Futuristic Site Header */}
+      <SiteHeader />
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-zinc-600 md:flex">
             <Link
-              href="/explorador"
+              href={explorerHref}
               className="font-bold text-[#002b7f] border-b-2 border-[#002b7f] pb-1"
             >
               Explorador y Mapa
@@ -257,59 +250,48 @@ function ExploradorContent({ query }: { query: string }) {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
-            >
-              Volver al Inicio
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-6 sm:px-8 py-8 space-y-6">
+      <main className="relative flex-1 mx-auto w-full max-w-7xl px-6 sm:px-8 py-8 space-y-6">
+        <div className="absolute inset-0 bg-tech-grid opacity-30 pointer-events-none" />
         {/* Title Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#002b7f] mb-2">
-              <LineChart className="size-3.5" />
-              <span>Explorador Territorial e Indicadores Socioeconómicos</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/70 px-3.5 py-1 text-xs font-semibold text-[#002b7f] mb-2 shadow-2xs">
+              <LineChart className="size-3.5 text-[#ff6a00]" />
+              <span className="font-mono text-[11px] tracking-wide">CARTOGRAFÍA SOCIOECONÓMICA · EL SALVADOR</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
-              Mapeo de Inclusión Financiera en El Salvador
+              Explorador Territorial de Inclusión Financiera
             </h1>
-            <p className="text-sm text-zinc-600 mt-1 max-w-2xl">
-              Analiza los 14 departamentos, compara métricas de exclusión y descubre las prioridades de desarrollo según nivel educativo e ingreso.
+            <p className="text-xs sm:text-sm text-zinc-600 mt-1 max-w-2xl leading-relaxed">
+              Analiza los 14 departamentos, evalúa brechas de exclusión y descubre las prioridades de desarrollo según nivel educativo e ingreso.
             </p>
           </div>
 
           {/* View toggle (Map vs Accessible Table) */}
-          <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 text-xs font-semibold shadow-xs self-start sm:self-auto">
+          <div className="inline-flex rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-1 text-xs font-semibold shadow-2xs self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setViewMode("map")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 transition-all duration-200 ${
                 viewMode === "map"
-                  ? "bg-[#002b7f] text-white shadow-xs"
-                  : "text-zinc-600 hover:text-zinc-950"
+                  ? "bg-[#002b7f] text-white shadow-xs font-bold"
+                  : "text-zinc-600 hover:text-zinc-950 hover:bg-white/50"
               }`}
             >
               <MapIcon className="size-3.5" />
-              Mapa Coroplético
+              <span>Mapa Coroplético</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 transition-all duration-200 ${
                 viewMode === "table"
-                  ? "bg-[#002b7f] text-white shadow-xs"
-                  : "text-zinc-600 hover:text-zinc-950"
+                  ? "bg-[#002b7f] text-white shadow-xs font-bold"
+                  : "text-zinc-600 hover:text-zinc-950 hover:bg-white/50"
               }`}
             >
               <TableIcon className="size-3.5" />
-              Vista Tabular
+              <span>Vista Tabular</span>
             </button>
           </div>
         </div>
@@ -351,10 +333,10 @@ function ExploradorContent({ query }: { query: string }) {
             )}
 
             {/* Methodological Context Note */}
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-xs text-zinc-600 space-y-2">
+            <div className="glass-surface rounded-2xl p-5 text-xs text-zinc-600 space-y-2">
               <div className="flex items-center gap-1.5 font-bold text-zinc-900">
                 <HelpCircle className="size-3.5 text-[#002b7f]" />
-                <span>Metodología de Visualización</span>
+                <span>Metodología de Visualización Geoespacial</span>
               </div>
               <p className="leading-relaxed text-[11px] text-zinc-500">
                 Los colores representan el indicador seleccionado para el corte disponible. La muestra puede variar con los filtros;
@@ -379,25 +361,8 @@ function ExploradorContent({ query }: { query: string }) {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-8 mt-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 text-xs text-zinc-500 sm:flex-row sm:px-8">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="ImpactAtlas"
-              width={110}
-              height={36}
-              className="h-6 w-auto object-contain opacity-80"
-            />
-            <span className="text-zinc-300">|</span>
-            <span>Explorador Territorial de El Salvador</span>
-          </div>
-          <p className="text-zinc-400">
-            ImpactAtlas • Mapeo Estadístico e Inclusión Financiera
-          </p>
-        </div>
-      </footer>
+      {/* Futuristic Site Footer */}
+      <SiteFooter />
     </div>
   );
 }

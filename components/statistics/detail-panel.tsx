@@ -13,8 +13,8 @@ import {
   Briefcase,
   Target,
   AlertTriangle,
-  Info,
   GitCompare,
+  ArrowRight,
 } from "lucide-react";
 
 interface StatisticsRow {
@@ -75,17 +75,17 @@ export function DetailPanel({
   });
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs flex flex-col gap-6">
+    <div className="glass-surface hud-bracket rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col gap-6 transition-all duration-300">
       {/* Panel Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-200/60">
         <div>
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-[#002b7f]" />
-            <h3 className="text-lg font-bold text-zinc-950">{title}</h3>
+            <span className="size-2 rounded-full bg-[#002b7f] animate-pulse" />
+            <h3 className="text-lg font-extrabold text-zinc-950">{title}</h3>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
             {selectedDepartment
-              ? "Detalle estadístico para el departamento seleccionado."
+              ? "Telemetría estadística detallada para el departamento seleccionado."
               : "Consolidado nacional de los 14 departamentos con los filtros activos."}
           </p>
         </div>
@@ -101,15 +101,16 @@ export function DetailPanel({
               })()}`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:border-[#002b7f] hover:text-[#002b7f] hover:bg-white transition-all shadow-2xs"
             >
-              <GitCompare className="size-3.5 text-[#ff6a00]" />
-              Comparar este departamento
+              <GitCompare className="size-3.5 text-[#ff6a00] transition-transform group-hover:rotate-180 duration-500" />
+              <span>Comparar este departamento</span>
+              <ArrowRight className="size-3 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           )}
 
           {isSuppressed && (
-            <div className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-              <AlertTriangle className="size-3.5" />
-              Muestra insuficiente (&lt; 5) — Datos suprimidos
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50/90 px-3 py-1.5 text-xs font-semibold text-amber-800 border border-amber-200/80 shadow-2xs">
+              <AlertTriangle className="size-3.5 text-amber-600" />
+              <span>Muestra insuficiente ($n &lt; 5$) — Datos protegidos</span>
             </div>
           )}
         </div>
@@ -177,82 +178,148 @@ export function DetailPanel({
             <span className="text-[11px] font-medium uppercase tracking-wider text-orange-700">Sin Acceso Fin.</span>
             <TrendingUp className="size-4 text-[#ff6a00]" />
           </div>
-          <div className="text-2xl font-bold text-[#ff6a00]">
+          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
             {loading ? (
-              <span className="inline-block w-16 h-6 bg-orange-200 rounded animate-pulse" />
-            ) : exclusionPct !== null && exclusionPct !== undefined ? (
+              <span className="inline-block w-16 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : isSuppressed ? (
+              <span className="text-xs font-sans text-zinc-400 italic">Suprimido</span>
+            ) : typeof exclusionPct === "number" ? (
               `${exclusionPct.toFixed(1)}%`
             ) : (
               "—"
             )}
           </div>
-          <div className="text-[10px] text-orange-600/80 mt-1">Tasa de exclusión</div>
+          <p className="text-[10px] text-zinc-500 mt-1.5">
+            Población sin cuenta bancaria ni servicios formales
+          </p>
+        </div>
+
+        {/* KPI 2: Ingreso Promedio */}
+        <div className="relative overflow-hidden rounded-2xl border border-blue-200/70 bg-gradient-to-b from-blue-50/40 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="h-1 w-full bg-gradient-to-r from-[#002b7f] to-blue-400 absolute top-0 left-0" />
+          <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-blue-950">Ingreso Medio</span>
+            <DollarSign className="size-4 text-[#002b7f]" />
+          </div>
+          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+            {loading ? (
+              <span className="inline-block w-20 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : typeof incomeMean === "number" ? (
+              `$${incomeMean.toLocaleString("es-SV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            ) : (
+              "—"
+            )}
+          </div>
+          <p className="text-[10px] text-zinc-500 mt-1.5">
+            Media estimada en dólares USD
+          </p>
+        </div>
+
+        {/* KPI 3: Ingreso Mediano */}
+        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-zinc-50/50 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="h-1 w-full bg-gradient-to-r from-zinc-500 to-zinc-400 absolute top-0 left-0" />
+          <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-700">Ingreso Mediano</span>
+            <DollarSign className="size-4 text-zinc-600" />
+          </div>
+          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+            {loading ? (
+              <span className="inline-block w-20 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : typeof incomeMedian === "number" ? (
+              `$${incomeMedian.toLocaleString("es-SV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            ) : (
+              "—"
+            )}
+          </div>
+          <p className="text-[10px] text-zinc-500 mt-1.5">
+            Percentil 50 libre de valores atípicos
+          </p>
+        </div>
+
+        {/* KPI 4: Muestra */}
+        <div className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-b from-zinc-50/50 via-white to-white p-4.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-400 absolute top-0 left-0" />
+          <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-700">Muestra Activa</span>
+            <Users className="size-4 text-emerald-600" />
+          </div>
+          <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+            {loading ? (
+              <span className="inline-block w-16 h-7 bg-zinc-200 rounded animate-pulse" />
+            ) : typeof sampleCount === "number" ? (
+              sampleCount.toLocaleString()
+            ) : (
+              "—"
+            )}
+          </div>
+          <p className="text-[10px] text-zinc-500 mt-1.5">
+            Observaciones analizadas en esta cohorte
+          </p>
         </div>
       </div>
 
-      {/* Breakdown Distributions */}
-      <div className="pt-2">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
-          <h4 className="text-sm font-bold text-zinc-900">Distribución Poblacional</h4>
-          <div className="inline-flex rounded-xl bg-zinc-100 p-1 text-xs">
+      {/* Categorical Distribution Section */}
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-extrabold text-zinc-950">Distribución Socioeconómica</h4>
+            <p className="text-[11px] text-zinc-500">
+              Desglose porcentual y tasa de exclusión financiera segmentada.
+            </p>
+          </div>
+
+          {/* Breakdown Tabs */}
+          <div className="inline-flex rounded-xl border border-zinc-200/80 bg-zinc-100/70 p-1 text-xs font-semibold text-zinc-600">
             <button
               type="button"
               onClick={() => setBreakdownTab("education")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
                 breakdownTab === "education"
-                  ? "bg-white font-semibold text-[#002b7f] shadow-xs"
-                  : "text-zinc-600 hover:text-zinc-900"
+                  ? "bg-white font-bold text-[#002b7f] shadow-2xs"
+                  : "hover:text-zinc-950"
               }`}
             >
               <GraduationCap className="size-3.5" />
-              Educación
+              <span>Educación</span>
             </button>
             <button
               type="button"
               onClick={() => setBreakdownTab("occupation")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
                 breakdownTab === "occupation"
-                  ? "bg-white font-semibold text-[#002b7f] shadow-xs"
-                  : "text-zinc-600 hover:text-zinc-900"
+                  ? "bg-white font-bold text-[#002b7f] shadow-2xs"
+                  : "hover:text-zinc-950"
               }`}
             >
               <Briefcase className="size-3.5" />
-              Ocupación
+              <span>Ocupación</span>
             </button>
             <button
               type="button"
               onClick={() => setBreakdownTab("goal")}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
                 breakdownTab === "goal"
-                  ? "bg-white font-semibold text-[#ff6a00] shadow-xs"
-                  : "text-zinc-600 hover:text-zinc-900"
+                  ? "bg-white font-bold text-[#002b7f] shadow-2xs"
+                  : "hover:text-zinc-950"
               }`}
             >
               <Target className="size-3.5" />
-              Metas
+              <span>Meta Principal</span>
             </button>
           </div>
         </div>
 
-        {/* Breakdown Content List / Bars */}
-        <div className="space-y-3">
+        {/* Rows List */}
+        <div className="space-y-2.5">
           {loading ? (
             <div className="space-y-3 py-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="w-28 h-3.5 bg-zinc-200 rounded animate-pulse" />
-                    <span className="w-12 h-3.5 bg-zinc-200 rounded animate-pulse" />
-                  </div>
-                  <div className="w-full h-2.5 bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-200 animate-pulse" style={{ width: `${60 - i * 10}%` }} />
-                  </div>
-                </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-10 rounded-xl bg-zinc-100 animate-pulse" />
               ))}
             </div>
-          ) : sortedRows.length === 0 || (sampleCount === 0) ? (
-            <div className="py-8 text-center text-xs text-zinc-500">
-              No hay observaciones para este desglose con los filtros actuales.
+          ) : sortedRows.length === 0 ? (
+            <div className="py-8 text-center text-xs text-zinc-500 border border-dashed border-zinc-200 rounded-2xl">
+              No hay datos disponibles para esta combinación de filtros.
             </div>
           ) : (
             sortedRows.map((row) => {
@@ -274,7 +341,9 @@ export function DetailPanel({
                       )}
                     </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+
+                  {/* Sleek Gradient Bar */}
+                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-zinc-100">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
                         breakdownTab === "goal" ? "bg-[#ff6a00]" : "bg-[#002b7f]"
@@ -287,12 +356,6 @@ export function DetailPanel({
             })
           )}
         </div>
-      </div>
-
-      {/* Methodological footnote */}
-      <div className="mt-auto pt-3 border-t border-zinc-100 flex items-center gap-2 text-[11px] text-zinc-400">
-        <Info className="size-3.5 shrink-0 text-zinc-400" />
-        <span>Métricas calculadas exactamente sobre los registros en PostgreSQL mediante agregaciones SQL seguras.</span>
       </div>
     </div>
   );

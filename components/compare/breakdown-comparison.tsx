@@ -44,54 +44,57 @@ export function BreakdownComparison({
         : catalog?.goals;
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-zinc-100 pb-4 gap-3">
+    <div className="glass-surface hud-bracket rounded-3xl p-6 shadow-sm transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/60 pb-4 gap-3">
         <div>
-          <h3 className="text-sm font-bold text-zinc-900">
-            Comparación de Distribuciones Categóricas
-          </h3>
-          <p className="text-xs text-zinc-500">
-            Categorías alineadas en el orden oficial del catálogo. Diferencias expresadas en puntos porcentuales (pp) respecto a {referenceDept?.label ?? "la referencia"}.
+          <div className="flex items-center gap-2">
+            <span className="flex size-2 rounded-full bg-[#002b7f]" />
+            <h3 className="text-sm font-extrabold text-zinc-950">
+              Distribuciones Categóricas Alineadas
+            </h3>
+          </div>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Categorías normalizadas del catálogo oficial. Diferencias expresadas en puntos porcentuales (pp) respecto a {referenceDept?.label ?? "la referencia"}.
           </p>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1.5 rounded-xl bg-zinc-100 p-1">
+        <div className="flex items-center gap-1.5 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-1 text-xs font-semibold text-zinc-600 shadow-2xs">
           <button
             type="button"
             onClick={() => onChangeBreakdown("education")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeBreakdown === "education"
-                ? "bg-white text-[#002b7f] shadow-xs"
-                : "text-zinc-600 hover:text-zinc-900"
+                ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
-            <GraduationCap className="size-3.5" />
-            Educación
+            <GraduationCap className="size-3.5 text-[#002b7f]" />
+            <span>Educación</span>
           </button>
           <button
             type="button"
             onClick={() => onChangeBreakdown("occupation")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeBreakdown === "occupation"
-                ? "bg-white text-[#002b7f] shadow-xs"
-                : "text-zinc-600 hover:text-zinc-900"
+                ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
-            <Briefcase className="size-3.5" />
-            Ocupación
+            <Briefcase className="size-3.5 text-[#ff6a00]" />
+            <span>Ocupación</span>
           </button>
           <button
             type="button"
             onClick={() => onChangeBreakdown("goal")}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeBreakdown === "goal"
-                ? "bg-white text-[#002b7f] shadow-xs"
-                : "text-zinc-600 hover:text-zinc-900"
+                ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
-            <Target className="size-3.5" />
-            Meta Principal
+            <Target className="size-3.5 text-emerald-600" />
+            <span>Meta Principal</span>
           </button>
         </div>
       </div>
