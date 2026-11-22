@@ -108,7 +108,7 @@ El código contiene límites de runtime en chat y rutas de backend, pero límite
 
 ## Pendientes y bloqueos principales
 
-1. Revisar y cerrar cambios locales sin commit, especialmente chat y PDF; reconciliar resultado con criterios D1/D2 sin sobrescribir trabajo.
+1. Cerrado el trabajo local sin commit: `7fe3722` agrupa los cambios de chat, PDF, mapa, operación y documentación. Falta la reconciliación con criterios D1/D2 contra un candidato desplegado.
 2. No marcar el chat como resuelto hasta verificar preguntas respaldadas, ambigüedad/abstención, fallos de modelo, seguridad y bypass del flujo anterior.
 3. Mantener búsqueda semántica desactivada hasta documentar procedencia y validar relevancia/compatibilidad de embeddings.
 4. GeoJSON: fuente y correspondencia de 14 features ya verificadas localmente; falta declarar/validar la licencia, consumir el archivo desde la app y decidir/cerrar MapLibre (D1-04).
@@ -118,7 +118,7 @@ El código contiene límites de runtime en chat y rutas de backend, pero límite
 
 ## Cambios locales inspeccionados (no sobrescritos)
 
-Al crear este inventario, `git status --short` mostraba cambios en:
+Al crear este inventario, `git status --short` mostraba cambios en (posteriormente commiteados en `7fe3722`, junto con `src/charts/`, `src/ai/lfm3.ts`, `docs/data-audit.md` y este documento):
 
 - `.gitignore`
 - `app/api/chat/route.ts`
