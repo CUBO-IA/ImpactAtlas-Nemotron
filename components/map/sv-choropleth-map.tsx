@@ -278,7 +278,7 @@ export function SvChoroplethMap({
         </div>
       </div>
       <p className="sr-only">
-        Fuente de las geometrías: Centro Nacional de Registros (CNR), El Salvador. Licencia no declarada en el archivo; verificar procedencia antes de publicación.
+        Geometrías: Centro Nacional de Registros (CNR), 2019 / Datos_SV. Licencia: Public Domain / Open Data.
       </p>
     </div>
   );

@@ -19,7 +19,7 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 | Área | Estado global | Evidencia / principal límite |
 | --- | --- | --- |
 | Auditoría de datos | Auditoría local documentada | `docs/data-audit.md`; solo aplica a la instancia local observada. No prueba el entorno de despliegue. |
-| Explorador | Implementado parcialmente | Página, estadísticas y mapa MapLibre con GeoJSON local (14 IDs verificados, sin tiles); falta licencia de geometrías y evidencia en candidato. |
+| Explorador | Implementado parcialmente | Página, estadísticas y mapa MapLibre con GeoJSON local (14 IDs verificados, sin tiles, licencia `Public Domain / Open Data` declarada); falta evidencia en candidato. |
 | Comparador | Implementado en UI/API | Pantalla, selector, tabla y endpoint; aceptación cruzada real y evidencia E2E no cerradas. |
 | Chat LFM3 local | Implementación presente, integración/aceptación no resueltas | Proveedor y orquestador existen; disponibilidad del modelo, grounding completo y comportamiento actual no validados. |
 | Búsqueda semántica | Desactivada por defecto; compatibilidad bloqueada | Requiere dos variables explícitas; auditoría no confirmó procedencia ni relevancia de embeddings. |
@@ -40,7 +40,7 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 **Parcial / no verificado**
 
 - El mapa usa MapLibre 6.19 con el GeoJSON local como `source` y un estilo sin tiles ni servicios externos (`components/map/sv-choropleth-map.tsx`). La selección por mapa y la tabla accesible son equivalentes. D1-04 sigue sin cerrar en el plan porque la licencia de las geometrías no está declarada en el GeoJSON.
-- Existe `public/geo/sv-departamentos.geojson` (`FeatureCollection` de 14 features). Verificado localmente: sus `properties.departmentId` coinciden con los 14 IDs de `src/data/audited-catalog.json` y declaran `source: "Centro Nacional de Registros (CNR), El Salvador"`; **no declaran licencia**. MapLibre consume el archivo directamente. `docs/data-audit.md` ya refleja este hallazgo.
+- Existe `public/geo/sv-departamentos.geojson` (`FeatureCollection` de 14 features). Verificado localmente: sus `properties.departmentId` coinciden con los 14 IDs de `src/data/audited-catalog.json` y declaran en `metadata` `source: "Centro Nacional de Registros (CNR), 2019 / Datos_SV"` y `license: "Public Domain / Open Data"` (ver `public/geo/ATTRIBUTION.md`). MapLibre consume el archivo directamente. `docs/data-audit.md` ya refleja este hallazgo.
 - `docs/plan/04-dev1-frontend.md` registra D1-05 y D1-06 como completados con referencias a código/pruebas locales; no se verificó aquí la ejecución actual ni el endpoint de un candidato.
 
 ### Comparador
@@ -111,7 +111,7 @@ El código contiene límites de runtime en chat y rutas de backend, pero límite
 1. Cerrado el trabajo local sin commit: `7fe3722` agrupa los cambios de chat, PDF, mapa, operación y documentación. Falta la reconciliación con criterios D1/D2 contra un candidato desplegado.
 2. No marcar el chat como resuelto hasta verificar preguntas respaldadas, ambigüedad/abstención, fallos de modelo, seguridad y bypass del flujo anterior.
 3. Mantener búsqueda semántica desactivada hasta documentar procedencia y validar relevancia/compatibilidad de embeddings.
-4. GeoJSON: fuente y correspondencia de 14 features verificadas; MapLibre ya consume el archivo sin tiles y la coropleta/selección están verificadas en navegador. Falta declarar/validar la licencia de las geometrías para cerrar D1-04.
+4. Cerrado D1-04: GeoJSON con 14 features, IDs verificados, fuente y licencia `Public Domain / Open Data` declaradas en `metadata` y registradas en `public/geo/ATTRIBUTION.md`; MapLibre consume el archivo sin tiles y la coropleta/selección están verificadas en navegador.
 5. Cerrar PDF compartido/legibilidad, límites y pruebas restantes; completar regresión E2E.
 6. Elegir y autorizar entorno, asegurar secretos, rol SELECT efectivo, HTTPS/acceso/rate limit, modelo local y runtime PDF; ensayar health, rollback y restauración de forma aislada.
 7. Verificar contra el entorno autorizado sin exponer secretos, filas, prompts personales o embeddings; documentar versión/corte y evidencia no sensible.

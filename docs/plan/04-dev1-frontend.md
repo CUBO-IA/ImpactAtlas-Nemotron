@@ -157,7 +157,7 @@ Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
 - [x] D1-01 — Shell y navegación — Evidencia: app/layout.tsx, app/page.tsx con enlaces y rutas completas.
 - [x] D1-02 — Filtros y URL — Evidencia: sincronización en /explorador, /comparador y /reportes.
 - [x] D1-03 — Contratos y fixtures — Evidencia: src/contracts/api.test.mjs (4/4 pasados).
-- [ ] D1-04 — MapLibre y GeoJSON — Avance: `components/map/sv-choropleth-map.tsx` usa MapLibre 6.19 con `public/geo/sv-departamentos.geojson` como source y estilo sin tiles; 14 features, coropleta por indicador, selección por mapa y tabla accesible equivalente (verificado en navegador local). Falta la licencia de las geometrías: el GeoJSON declara fuente CNR El Salvador pero no licencia.
+- [x] D1-04 — MapLibre y GeoJSON — Evidencia: `components/map/sv-choropleth-map.tsx` usa MapLibre 6.19 con `public/geo/sv-departamentos.geojson` como source y estilo sin tiles; 14 features con IDs verificados contra el catálogo, coropleta por indicador, selección por mapa y tabla accesible equivalente (verificado en navegador local). `metadata` declara fuente CNR 2019/Datos_SV y licencia `Public Domain / Open Data`, registrada en `public/geo/ATTRIBUTION.md`.
 - [x] D1-05 — Panel y gráficos — Evidencia: components/statistics/detail-panel.tsx con KPIs y barras.
 - [x] D1-06 — Pruebas del explorador — Evidencia: src/contracts/fase2.test.mjs (4/4 pasados) y AbortController.
 - [x] D1-07 — Vista comparativa — Evidencia: components/compare/department-selector.tsx y comparison-table.tsx.
