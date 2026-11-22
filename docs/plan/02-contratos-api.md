@@ -355,7 +355,7 @@ Reglas:
 - `exhaustive: true` se refiere al universo filtrado de la muestra, nunca a la población salvadoreña.
 - `semantic_examples` siempre usa `exhaustive: false`; sus `facts` no contienen prevalencias inferidas del top-k.
 - Las explicaciones genéricas sin evidencia pueden tener `evidenceIds: []`, pero ninguna afirmación sobre cifras o patrones de la muestra.
-- Si el proveedor falla y hay hechos seguros ya calculados, puede devolverse tabla y advertencia `AI_NARRATIVE_UNAVAILABLE`; si no, error 503.
+- Si LFM3 local no está disponible y hay hechos seguros ya calculados, puede devolverse tabla y advertencia `AI_NARRATIVE_UNAVAILABLE`; si no, error 503.
 - No devolver conteos sensibles por medio de `facts`, etiquetas, textos o tamaños de tabla.
 
 Ejemplo de entrada:
@@ -452,7 +452,7 @@ X-Request-Id: <identificador>
 
 ### `GET /api/health`
 
-`200 {"status":"ok"}` si aplicación y consulta mínima de lectura a BD funcionan; `503 {"status":"unavailable"}` en caso contrario. Timeout corto. No exponer host, versión, SQL, secretos ni conteo de registros. El proveedor LLM se comprueba durante smoke tests, no en cada health check.
+`200 {"status":"ok"}` si aplicación y consulta mínima de lectura a BD funcionan; `503 {"status":"unavailable"}` en caso contrario. Timeout corto. No exponer host, versión, SQL, secretos ni conteo de registros. La disponibilidad/carga del modelo LFM3 local se comprueba durante smoke tests, no en cada health check.
 
 ### Error común
 
@@ -474,7 +474,7 @@ X-Request-Id: <identificador>
 | 413 | `PAYLOAD_TOO_LARGE` | Cuerpo mayor al permitido. |
 | 422 | `REPORT_LIMIT_EXCEEDED` | Configuración válida pero documento fuera de límites. |
 | 429 | `RATE_LIMITED` / `BUSY` | Límite por cliente o concurrencia; `Retry-After`. |
-| 503 | `DEPENDENCY_UNAVAILABLE` | PostgreSQL/proveedor/renderizador no disponible. |
+| 503 | `DEPENDENCY_UNAVAILABLE` | PostgreSQL/modelo LFM3 local/renderizador no disponible. |
 | 504 | `TIME_BUDGET_EXCEEDED` | Presupuesto global agotado. |
 | 500 | `INTERNAL_ERROR` | Fallo inesperado sin detalles internos. |
 
@@ -487,7 +487,7 @@ Sin coincidencias es 200, no 404. Pregunta ambigua o sin evidencia es 200 con es
 | Cuerpo JSON | 64 KiB, comprobado en proxy y servidor, incluso sin `Content-Length`. |
 | Consulta SQL | `statement_timeout` de 5 s; timeout transaccional/limpieza comprobados. |
 | Estadísticas/comparador | Presupuesto de petición de 15 s. |
-| Chat | Presupuesto total de 45 s, incluyendo herramientas/proveedor; máximo 4 herramientas. |
+| Chat | Presupuesto total de 45 s, incluyendo herramientas e inferencia LFM3 local; máximo 4 herramientas. |
 | Reporte | Presupuesto total de 90 s; proxy al menos 120 s. |
 | Concurrencia inicial por instancia | 1 PDF, 2 chats; rechazar exceso con 429, sin cola. |
 | Rate limit por identidad/IP confiable | 60 consultas analíticas/min, 10 chats/min, 2 PDF/min; calibrar en piloto. |

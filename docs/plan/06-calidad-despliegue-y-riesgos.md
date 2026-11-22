@@ -17,7 +17,7 @@ Los recorridos E2E y la generación PDF pueden reutilizar Playwright; no instala
 | Interfaz | Filtros, respuesta fuera de orden, teclado, nulos y errores recuperables. | Dev 1, D1-06/09/12/16. | Estado y alcance coherentes, sin depender solo del color. |
 | PDF | Un reporte real con gráfico y texto; cifras, secciones, fallback IA y limpieza. | Dev 2, D2-15; Dev 1, D1-15. | PDF legible, cifras del snapshot y error JSON cuando no hay documento válido. |
 | Integración | Cuatro recorridos críticos y smoke en candidato desplegado. | Dev 1, D1-17; ambos, I-06. | Comandos/resultados y URL/corte/versiones usados. |
-| Operación | Límites de concurrencia, caída proveedor, BD lenta y rollback. | Dev 2, D2-17/18. | Respuestas acotadas, sin fugas de conexiones/procesos y recuperación comprobada. |
+| Operación | Límites de concurrencia, modelo local ausente/sin recursos, BD lenta y rollback. | Dev 2, D2-17/18. | Respuestas acotadas, sin fugas de conexiones/procesos y recuperación comprobada. |
 
 ### Diseño de la fixture estadística
 
@@ -35,8 +35,8 @@ Si los tipos/nulabilidad físicos impiden insertar un valor inválido, comprobar
 
 Mantener un conjunto pequeño de preguntas españolas con intención/herramienta esperada, filtros y hechos de referencia. Separar:
 
-1. **Pruebas deterministas con respuestas simuladas del proveedor:** selección/argumentos permitidos, validación de hechos, inyección y fallback. No dependen de una frase exacta.
-2. **Smoke real con API aprobada:** un recorrido SQL y uno semántico para verificar integración. Registrar modelo/costo/duración; no repetir toda la suite contra la API por cada cambio.
+1. **Pruebas deterministas con salida simulada del modelo local:** selección/argumentos permitidos, validación de hechos, inyección y fallback. No dependen de una frase exacta.
+2. **Smoke local con LFM3:** un recorrido SQL y uno semántico para verificar integración una vez disponibles archivos y recursos autorizados. Registrar versión/configuración/duración y CPU/memoria; no enviar datos a API externa.
 
 Casos mínimos:
 
@@ -74,7 +74,7 @@ Ninguna cifra sin respaldo puede aprobarse. El comportamiento de abstención es 
 
 ### Chat IA
 
-- [ ] LLM accedido por API aprobada, herramientas limitadas y rol de BD de solo lectura.
+- [ ] LFM3 local desde `LFM3_MODEL_DIR` vía `@browser-ai/transformers-js`, CPU q4; herramientas limitadas y rol de BD de solo lectura. Sin API externa/OpenAI.
 - [ ] Conteos, promedios y porcentajes proceden exclusivamente de SQL.
 - [ ] Vectores existentes se reutilizan con un modelo de consulta compatible y filtros estructurados.
 - [ ] Texto, tablas y gráficos referencian evidencias verificadas.
@@ -109,11 +109,11 @@ Medir en entorno candidato con configuración/versión de datos documentadas. So
 | Estadísticas por departamento | p95 ≤ 2 s | 20 peticiones representativas tras calentamiento, sin caché de resultados. |
 | Comparación de 14 departamentos | p95 ≤ 3 s | Métricas y tres distribuciones; filtros amplios/selectivos. |
 | Búsqueda semántica | p95 ≤ 10 s | Incluye embedding de consulta con modelo caliente; registrar frío por separado. |
-| Chat completo | p95 ≤ 30 s | Proveedor accesible; incluye herramientas; presupuesto duro de 45 s. |
+| Chat completo | p95 ≤ 30 s | LFM3 local caliente; incluye herramientas; presupuesto duro de 45 s. Medir cold start por separado. |
 | PDF | p95 ≤ 60 s | Plantilla ≤20 páginas, una generación concurrente; presupuesto duro de 90 s. |
 | UI | Sin resultado obsoleto ni bloqueo de navegación | Mapa/gráficos se cargan por pantalla; verificar móvil y escritorio. |
 
-Las 20 solicitudes dan señal inicial, no una certificación estadística. Añadir una ejecución mixta de 10 clientes con límites activos; registrar p50/p95, errores, CPU/memoria y uso de conexiones. No hacer carga contra producción sin autorización ni disparar gasto LLM innecesario.
+Las 20 solicitudes dan señal inicial, no una certificación estadística. Añadir una ejecución mixta de 10 clientes con límites activos; registrar p50/p95, errores, CPU/memoria y uso de conexiones. No hacer carga contra producción sin autorización ni provocar inferencias locales innecesarias.
 
 Si un objetivo falla, inspeccionar consulta, proyección, pool, modelo y render. Un índice se propone solo después de inventariar los existentes y mostrar mejora; no añadir infraestructura como primera respuesta.
 
@@ -138,8 +138,7 @@ Los nombres nuevos se materializan durante implementación, no son variables ya 
 | Variable | Propósito | Exposición |
 | --- | --- | --- |
 | `DATABASE_URL` | Rol SELECT sobre la BD/corte existente. | Secreta, solo servidor. |
-| `LLM_API_KEY` | Credencial del proveedor; adaptar nombre al SDK elegido. | Secreta, solo servidor. |
-| `LLM_MODEL` | Modelo aprobado del proveedor. | Servidor. |
+| `LFM3_MODEL_DIR` | Directorio local con archivos requeridos por LFM3; por defecto `models`. | Servidor; verificar presencia, permisos y espacio. |
 | `EMBEDDING_MODEL` | Modelo compatible con los vectores, no elegido por preferencia. | Servidor; ya existe esta configuración en código. |
 | `EMBEDDING_MODEL_REVISION` | Revisión verificada, si el cargador elegido la soporta. | Servidor; fijar también en imagen/artefacto. |
 | `DATASET_VERSION` | Identificador del corte auditado. | Puede publicarse en metadatos, sin secretos. |
@@ -158,22 +157,22 @@ Límites de ejecución y concurrencia pueden mantenerse como constantes del serv
 6. No incluir `pnpm db:ingest`, resets o aplicación automática de migraciones en build/start/release.
 7. Inyectar secretos de servidor y verificar rol SELECT/pool/timeouts.
 8. Levantar candidato tras gateway, con acceso restringido y límites activos.
-9. Ejecutar health, smoke de cuatro funciones, PDF real y fallo controlado del proveedor.
-10. Revisar logs/costos/recursos y aprobar I-06 con ambos devs.
+9. Ejecutar health, smoke de cuatro funciones, PDF real y fallo controlado de carga/modelo local.
+10. Revisar logs/recursos y aprobar I-06 con ambos devs.
 11. Publicar URL piloto; conservar imagen anterior y runbook.
 
-`maxDuration` en un Route Handler no garantiza tiempo disponible por sí solo. Verificar límites reales del hosting, proxy y proveedor, especialmente para PDF y modelos locales.
+`maxDuration` en un Route Handler no garantiza tiempo disponible por sí solo. Verificar límites reales del hosting y proxy, especialmente para PDF e inferencia local.
 
 ### Rollback y operación
 
 - Revertir a la imagen/tag de aplicación anterior y su configuración compatible.
 - No resetear BD ni borrar vectores: el MVP no necesita cambios destructivos para desplegar.
 - Si se aprobó excepcionalmente un índice, tratar su reversión como cambio separado; no mezclar rollback de app con DDL automático.
-- Logs: `requestId`, endpoint, duraciones, herramienta, filas agregadas publicables, estado y tokens/costo cuando el proveedor lo permita.
+- Logs: `requestId`, endpoint, duraciones, herramienta, filas agregadas publicables, estado y recursos de inferencia; no registrar prompts sensibles ni microdatos.
 - No logs de conversaciones completas o filas recuperadas por defecto; retención restringida.
-- Alertas mínimas sobre errores, health, memoria/conexiones y gasto/cuota LLM usando herramientas ya disponibles.
+- Alertas mínimas sobre errores, health, memoria/CPU/conexiones usando herramientas ya disponibles; no hay gasto ni cuota de API LLM remota en esta arquitectura.
 - Si hay saturación, responder 429/503; no mantener una cola en memoria sin límite.
-- Runbook incluye cold start del modelo, reinicio, limpieza de temporales y caída de proveedor/BD.
+- Runbook incluye cold start/carga fallida del modelo local, reinicio, limpieza de temporales y caída de BD.
 
 ## 5. Riesgos y decisiones de mitigación
 
@@ -189,12 +188,12 @@ Límites de ejecución y concurrencia pueden mantenerse como constantes del serv
 | Alucinación o lenguaje causal | Alta / alto | Hechos/citas, validación, abstención y fallback determinista. Dev 2; Dev 1 verifica etiquetas. | Cifra sin evidencia o recomendación presentada como certeza. |
 | SQL injection / prompt injection | Media / alto | Plantillas, parámetros, allowlists, rol SELECT, límites y entrada recuperada no confiable. Dev 2. | Herramienta/columna fuera del catálogo o consultas no autorizadas. |
 | Reidentificación por filtros o diferencias | Media / alto | Acceso restringido, k inicial, supresión complementaria, rate limit y revisión antes de apertura pública. Ambos. | Cohortes pequeñas o inferencia a través de consultas relacionadas. |
-| Envío de información sensible al LLM | Media / alto | Agregados/evidencia sanitizada, minimización, aprobación de política de datos. Dev 2. | Proveedor sin garantías aprobadas o campos libres sensibles. |
+| Exposición accidental de información sensible en el flujo IA | Media / alto | Inferencia local; agregados/evidencia sanitizada, minimización, no exponer microdatos en salida/logs. Dev 2. | Campos libres sensibles, logs con prompts o respuestas con datos individuales. |
 | SSRF/HTML no confiable en PDF | Media / alto | Sin URLs/HTML de cliente; plantilla fija, escape y red bloqueada para Chromium. Dev 2. | Render intenta cargar recursos externos. |
 | Memoria/CPU por embedding y Chromium | Media / alto | Modelo caliente compartido, límites de concurrencia, cierre de procesos y medición. Dev 2. | OOM, render lento o pool agotado. |
 | Desacuerdo de contratos/bloqueos entre devs | Media / medio | I-01 temprano, fixtures comunes y corte real durante la fase. Ambos. | UI y endpoint divergen; corregir contrato antes de continuar. |
 | Datos cambian durante la generación de reporte | Media / medio | Snapshot transaccional de lectura y liberación antes de IA/PDF. Dev 2. | Cifras del gráfico no coinciden con el texto del mismo documento. |
-| Cuota/gasto o indisponibilidad del proveedor | Media / alto | Presupuesto, límites, fallbacks honestos y monitoreo existente. Dev 2. | Errores 429/503 o costo fuera de lo aprobado. |
+| Modelo local no disponible o insuficiencia de CPU/memoria | Media / alto | Validar archivos en `LFM3_MODEL_DIR`, límites/concurrencia, fallback honesto y medir recursos. Dev 2. | Carga fallida, OOM, saturación o latencia fuera del presupuesto. |
 | Licencia/precisión del GeoJSON | Media / medio | Fuente, licencia y revisión de 14 features/IDs. Dev 1. | Geometrías faltantes o imposibilidad de redistribución. |
 
 No tratar correlaciones como relaciones causales ni una muestra abundante en un departamento como prueba de mayor necesidad.
@@ -225,13 +224,13 @@ No tratar correlaciones como relaciones causales ni una muestra abundante en un 
 
 - [ ] Acceso del piloto restringido; sin implementación innecesaria de cuentas.
 - [ ] Rol de aplicación de solo lectura, PostgreSQL no público y transporte protegido.
-- [ ] Sin claves, vectores o microdatos en cliente, logs, repositorio o proveedor.
+- [ ] Sin credenciales de proveedor remoto, vectores ni microdatos en cliente/logs; preguntas y evidencias permanecen en el entorno local.
 - [ ] SQL/prompt injection y bypass del chat antiguo comprobados.
 - [ ] Supresión de grupos pequeños y complementaria aplicada en todas las salidas.
 - [ ] Rate limit, límite de cuerpo, timeout, cancelación y concurrencia activos.
 - [ ] Chromium sin URLs arbitrarias y procesos/conexiones liberados tras errores.
 - [ ] Backup y restauración aislada verificados; rollback de aplicación ensayado.
-- [ ] Modelos/fuentes/Chromium disponibles antes de aceptar tráfico.
+- [ ] Archivos LFM3, recursos CPU q4, fuentes y Chromium disponibles antes de aceptar tráfico.
 - [ ] Logs, health, responsables y runbook operativos.
 - [ ] Smoke tests contra URL final de las cuatro funciones completados por ambos.
 - [ ] I-06 aprobado: URL, fecha, versión de aplicación/corte y evidencia registradas.

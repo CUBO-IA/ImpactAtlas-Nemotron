@@ -10,7 +10,7 @@ Inspección de archivos, **sin conectarse a PostgreSQL ni verificar registros en
 | Datos | `src/db/contract.prisma` define `NemotronSvMuestra` y `embedding Raw(sql\`vector(768)\`)`. La migración usa `public."NemotronSvMuestra"`. | Verificar nombre físico, tipos, permisos y correspondencia con la BD real. |
 | Prisma | Runtime `@prisma/orm-postgres` rc.24 y CLI `prisma` rc.34 declarados en `package.json`; existe `src/db/db.ts` y artefactos de contrato. | Probar consultas con las versiones instaladas. No asumir APIs de Prisma 7 ni actualizar por rutina. |
 | Embeddings | `src/ai/embeddings.ts` configura por defecto `onnx-community/embeddinggemma-2-ONNX`, mean pooling, normalización y prefijos de búsqueda/documento. | Verificar que modelo, revisión, dimensión y preprocesamiento coincidan con los vectores almacenados. La configuración actual no prueba su procedencia histórica. |
-| Chat | `app/api/chat/route.ts` transmite respuestas de un LFM3 local, sin herramientas estadísticas. | Integrar proveedor LLM por API y herramientas; el chat actual no satisface el MVP. |
+| Chat | `app/api/chat/route.ts` transmite respuestas de un LFM3 local, sin herramientas estadísticas. | Decisión del proyecto: LFM3 local vía `@browser-ai/transformers-js`, CPU q4, modelo desde `LFM3_MODEL_DIR` (por defecto `models`), sin API externa/OpenAI. Los endpoints con herramientas están en implementación y aún deben cumplir controles y pruebas del plan. |
 | PostgreSQL local | Compose declara PostgreSQL 17 con pgvector y volumen persistente. | Mantener la BD existente; no levantar otra en producción por defecto. |
 | Índices | La migración de muestra revisada declara PK; no demuestra qué índices tiene hoy la instancia. | Consultar catálogos e inspeccionar planes antes de proponer DDL. |
 | Visualización/PDF | MapLibre, ECharts y motor PDF no figuran en las dependencias declaradas. | Añadir solo las dependencias necesarias en sus tareas. |
@@ -31,7 +31,7 @@ flowchart TD
     UI --> API["Route Handlers: validación y límites"]
     API --> ST["Servicio de estadísticas / consultas parametrizadas"]
     API --> AG["Orquestador IA con herramientas permitidas"]
-    AG --> LLM["LLM por API: intención y redacción"]
+    AG --> LLM["LFM3 local: intención y redacción (CPU q4)"]
     AG --> ST
     AG --> VS["Búsqueda semántica con filtros"]
     VS --> QE["Embedding solo de la pregunta: modelo compatible"]
@@ -189,7 +189,7 @@ Mostrar siempre: «Datos de muestra; no necesariamente representativos de El Sal
 4. Aplicar todos los filtros estructurados dentro de la consulta, no filtrar un top-k global en JavaScript.
 5. Ordenar por distancia y acotar candidatos; tratar distancia como similitud, no probabilidad ni «confianza».
 6. Si hay índice aproximado, comprobar pérdida de resultados bajo filtros selectivos. Usar búsqueda exacta acotada cuando sea viable; no afirmar exhaustividad del top-k.
-7. Proyectar únicamente campos permitidos y sintetizar evidencia agregada/redactada; no enviar perfiles completos a la API externa.
+7. Proyectar únicamente campos permitidos y sintetizar evidencia agregada/redactada; la inferencia LFM3 es local y no envía perfiles a una API externa.
 8. Candidatos vacíos o irrelevantes: abstenerse. No fabricar evidencia para rellenar.
 
 Si se cuentan los IDs recuperados, solo significa «candidatos recuperados», nunca tamaño de la necesidad en el conjunto. Para un conteo temático exacto hace falta una definición estructurada verificable y consultar todo el universo pertinente.
@@ -216,7 +216,7 @@ Flujo: validar entrada → resolver intención con catálogo limitado → valida
 - Si la pregunta exige causalidad, representatividad nacional o datos inexistentes, explicar el límite y ofrecer una consulta descriptiva posible.
 - Registrar solicitud, herramientas, duraciones y resultados de validación por `requestId`; no registrar vectores, secretos ni prompts con microdatos.
 
-**Proveedor:** usar el SDK `ai` ya presente si la versión instalada soporta el proveedor elegido; añadir únicamente su adaptador oficial necesario. Registrar modelo, región, retención y costo aprobado en I-03. El LFM3 local no será un segundo backend obligatorio.
+**Modelo de IA (decisión):** usar LFM3 local mediante `@browser-ai/transformers-js`, CPU q4, desde `LFM3_MODEL_DIR` (por defecto `models`). No integrar API externa/OpenAI ni condicionar el trabajo a claves, aprobación de proveedor, región, retención externa o cuotas. Antes de darlo por listo, validar archivos completos/compatibles del modelo, carga local, recursos CPU/memoria/disco, latencia y liberación de recursos en el entorno candidato. Estas verificaciones siguen pendientes. Las reglas de privacidad, minimización, grounding y abstención se mantienen; las preguntas y evidencias no se envían a servicios externos.
 
 **Reportes:** el servidor obtiene una sola instantánea estadística para el documento, reutiliza sus hechos para narrativa y gráficos, y genera el PDF sin aceptar cifras del cliente. El LLM no recalcula indicadores.
 
@@ -284,4 +284,4 @@ Crear archivos solo cuando exista su primera implementación. `src/contracts` no
 - Next.js local: `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md` y `01-app/02-guides/self-hosting.md`, consultados para este plan.
 - Context7: documentación de Next.js `/vercel/next.js/v16.4.5`, versión indexada cercana; en diferencias prevalecen las guías locales de 16.4.6.
 - Prisma 8 instalado: `.agents/skills/prisma-8/references/queries-postgres.md`; confirmar versión de referencia/runtime antes de implementar.
-- Dev 1 verifica APIs actuales de MapLibre/ECharts al abordar visualización; Dev 2 verifica proveedor y motor PDF al integrarlos. Este documento no presupone firmas de SDK no comprobadas.
+- Dev 1 verifica APIs actuales de MapLibre/ECharts al abordar visualización; Dev 2 verifica integración de `@browser-ai/transformers-js`, archivos/modelo local y motor PDF al implementarlos. Este documento no presupone firmas de SDK no comprobadas.

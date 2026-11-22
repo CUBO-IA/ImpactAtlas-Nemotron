@@ -18,13 +18,13 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 | D2-06 | Verificar exactitud SQL y validación del endpoint | P0 | S2 | 4 h | D2-04, D2-05. | Fixture pequeña verificable y regresiones de cálculos/filtros/privacidad. |
 | D2-07 | Implementar comparación reutilizando el servicio estadístico | P1 | S3 | 12 h | I-02, D2-04. | `/api/compare`, diferencias y distribuciones consistentes. |
 | D2-08 | Probar comparación, denominadores y supresión complementaria | P0 | S3 | 6 h | D2-07, D2-06. | Casos de referencia, cero, nulos y reconstrucción por resta. |
-| D2-09 | Verificar consulta vectorial compatible y proveedor LLM por API | P0 | S3 | 10 h | D2-01, D2-02; credenciales/aprobación del proveedor. | Spike de búsqueda filtrada, modelo/revisión confirmados y adaptador API probado. |
-| D2-10 | Crear herramientas SQL y orquestación del chat por API | P0 | S4 | 12 h | I-03, D2-07, D2-09. | Herramientas permitidas, `/api/chat`, evidencia y límites de ejecución. |
+| D2-09 | Verificar consulta vectorial compatible y carga de LFM3 local | P0 | S3 | 10 h | D2-01, D2-02; archivos locales del modelo y recursos disponibles. | Spike de búsqueda filtrada y validación local de LFM3 CPU q4 desde `LFM3_MODEL_DIR` (por defecto `models`). |
+| D2-10 | Crear herramientas SQL y orquestación del chat con LFM3 local | P0 | S4 | 12 h | I-03, D2-07, D2-09. | Herramientas permitidas, `/api/chat`, evidencia y límites de ejecución; sin API externa. |
 | D2-11 | Integrar búsqueda semántica e híbrida sin recalcular embeddings | P1 | S4 | 8 h | D2-09, D2-04. | Herramienta semántica con filtros SQL, candidatos acotados y salida sanitizada. |
 | D2-12 | Validar grounding, abstención y seguridad del chat | P0 | S4 | 8 h | D2-10, D2-11. | Hechos verificables, rechazo de cifras nuevas, pruebas IA y cierre del chat antiguo. |
 | D2-13 | Construir snapshot único de reporte y narrativa respaldada | P0 | S5 | 8 h | I-04, D2-04, D2-07. | Documento interno con agregados, secciones, evidencia y advertencias. |
 | D2-14 | Generar PDF del servidor con gráficos y límites | P1 | S5 | 14 h | D2-13, contrato/primer gráfico D1-14. | `/api/reports/pdf`, ECharts SSR, plantilla fija y Chromium acotado. |
-| D2-15 | Probar reporte, degradación IA y liberación de recursos | P0 | S5 | 6 h | D2-14. | Verificación de cifras/PDF, fallo proveedor, timeout y limpieza. |
+| D2-15 | Probar reporte, degradación IA y liberación de recursos | P0 | S5 | 6 h | D2-14. | Verificación de cifras/PDF, modelo local no disponible, timeout y limpieza. |
 | D2-16 | Configurar publicación mínima y controles de operación | P0 | S6 | 12 h | I-05; entorno disponible. | Contenedor/Node, HTTPS/gateway, secretos, rol lectura, health y release reproducible. |
 | D2-17 | Medir consultas, carga y búsqueda antes de optimizar | P0 | S6 | 8 h | I-05, D2-16. | Resultados p95, planes SQL/vectoriales y optimización justificada solo si hace falta. |
 | D2-18 | Resolver bloqueantes backend y entregar runbook/rollback | P0 | S6 | 8 h | D2-16, D2-17. | Correcciones, `docs/operations.md`, prueba de restauración/rollback y smoke test. |
@@ -94,7 +94,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 - Registrar modelo y revisión real, dimensión, preprocesamiento y distancia. Validar pregunta/documento con un ejemplo relevante.
 - Filtros estructurados restringen candidatos en SQL; no se filtra solo un top-k global en memoria.
 - Medir aproximación/recall bajo filtro selectivo frente a referencia exacta pequeña/autorizada.
-- Proveedor aprobado: acceso API, modelo, cuotas, costos, política de datos y adaptación al SDK instalado comprobados.
+- LFM3 carga desde `LFM3_MODEL_DIR` (por defecto `models`) mediante `@browser-ai/transformers-js` en CPU q4; archivos requeridos y recursos locales comprobados. No se requieren credenciales, aprobación ni cuotas de proveedor remoto.
 - Un vector incompatible no se presenta como búsqueda válida; si no puede resolverse sin regenerar, declarar bloqueo de I-03.
 
 ### Fase 4 — 28 h + I-04
@@ -102,7 +102,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 **D2-10**
 
 - Herramientas de estadísticas y comparación tienen argumentos validados y SQL predeterminado.
-- LLM por API sin conexión a BD; no existe herramienta de SQL arbitrario.
+- LFM3 local sin conexión a BD; no existe herramienta de SQL arbitrario ni llamada a API externa/OpenAI.
 - Presupuesto global, máximo de herramientas y salida JSON validados.
 - Evidencias tienen filtros, versión y hechos; historial del cliente no puede convertirse en evidencia.
 
@@ -111,7 +111,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 - Solo se genera embedding de la pregunta; vectores almacenados se reutilizan intactos.
 - Herramienta híbrida respeta filtros, proyección de campos, top-k y timeout.
 - Evidencia semántica es exploratoria, no una prevalencia ni un conteo de todas las personas con esa intención.
-- Sanitización evita enviar perfiles completos o contenido sensible al proveedor.
+- Privacidad: el flujo local no envía preguntas, perfiles ni evidencias a un proveedor externo; mantener minimización y no exponer microdatos en respuestas/logs.
 
 **D2-12**
 
@@ -119,7 +119,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 - Casos económicos exactos, pregunta ambigua, sin evidencia y causalidad no soportada están cubiertos.
 - Inyecciones en pregunta, historial o registro recuperado no cambian permisos/herramientas.
 - `/api/chat` se adapta al contrato final y usa el servicio protegido, sin bypass local.
-- Proveedor caído no produce una respuesta inventada; tabla verificada o error explícito.
+- Modelo local ausente, incompatible o sin recursos no produce una respuesta inventada; tabla verificada o error explícito y acotado.
 
 ### Fase 5 — 28 h + I-05
 
@@ -163,7 +163,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 
 **D2-18**
 
-- Runbook cubre despliegue, variables, límites, revisión de logs, proveedor caído y reinicio seguro.
+- Runbook cubre despliegue, variables, límites, revisión de logs, modelo/archivos locales ausentes o fallo de carga y reinicio seguro.
 - Rollback de aplicación ensayado sin tocar tabla/vectores; restauración de backup verificada en entorno aislado autorizado.
 - Bloqueantes resueltos; smoke tests de datos, chat y PDF en URL final junto con Dev 1.
 
@@ -179,7 +179,7 @@ Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
 - [ ] D2-06 — Pruebas SQL/API.
 - [ ] D2-07 — Endpoint comparador.
 - [ ] D2-08 — Pruebas comparación/privacidad.
-- [ ] D2-09 — Spike vectores/proveedor.
+- [ ] D2-09 — Spike vectores/modelo local.
 - [ ] D2-10 — Herramientas y chat API.
 - [ ] D2-11 — Búsqueda semántica/híbrida.
 - [ ] D2-12 — Grounding y seguridad IA.

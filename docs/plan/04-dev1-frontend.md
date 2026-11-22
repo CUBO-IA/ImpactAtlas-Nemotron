@@ -21,7 +21,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 | D1-09 | Verificar coherencia visual y funcional del comparador | P0 | S3 | 4 h | D1-07, D1-08, D2-07. | Pruebas del recorrido comparativo y consistencia con mapa. |
 | D1-10 | Construir chat y contexto de filtros sin persistencia | P1 | S4 | 16 h | I-03, D1-03. | Pregunta/historial acotado, envío, cancelación, espera y reintento explícito. |
 | D1-11 | Renderizar bloques de texto, tabla, gráfico y evidencias | P1 | S4 | 8 h | D1-10, D1-05; contrato `ChartSpec`. | Render seguro, fuentes, universo consultado y limitaciones visibles. |
-| D1-12 | Verificar abstención, aclaración y fallos del chat | P0 | S4 | 4 h | D1-10, D1-11, D2-10. | Estados sin evidencia, proveedor caído, límites y contenido no ejecutable. |
+| D1-12 | Verificar abstención, aclaración y fallos del chat | P0 | S4 | 4 h | D1-10, D1-11, D2-10. | Estados sin evidencia, LFM3 local no disponible, límites y contenido no ejecutable. |
 | D1-13 | Construir configuración y descarga de reportes PDF | P1 | S5 | 12 h | I-04, D1-02; contrato PDF. | Selección de departamentos/indicadores/secciones, resumen de filtros y descarga. |
 | D1-14 | Compartir gráficos permitidos entre UI y render SSR | P0 | S5 | 8 h | D1-05, D1-11. | Traducción `ChartSpec` → opciones ECharts y ejemplos SSR sin DOM para Dev 2. |
 | D1-15 | Verificar configuración, descarga y legibilidad de reportes | P0 | S5 | 8 h | D1-13, D1-14, D2-14. | Recorrido de descarga, manejo JSON/binario y revisión visual del PDF real. |
@@ -106,7 +106,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 
 **D1-12**
 
-- Aclaración, abstención, 429, timeout y proveedor caído tienen mensajes accionables distintos.
+- Aclaración, abstención, 429, timeout y fallo de carga/no disponibilidad de LFM3 local tienen mensajes accionables distintos.
 - El texto no presenta semántica como conteo nacional ni causalidad.
 - Se verifica al menos un contenido malicioso y un resultado sin evidencia con fixtures.
 

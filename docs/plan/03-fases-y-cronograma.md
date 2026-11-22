@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | 1 — Base y contrato | Entender datos, fijar contratos y habilitar trabajo paralelo. | I-01 aprobado; auditoría, UI con fixtures y catálogo real. |
 | 2 — Exploración territorial | Primera funcionalidad completa de extremo a extremo. | I-02: mapa + filtros + detalle con estadísticas verificadas. |
-| 3 — Comparación y preparación IA | Comparación real y viabilidad de vectores/proveedor. | I-03: comparador y spike IA aprobados. |
+| 3 — Comparación y preparación IA | Comparación real y viabilidad de vectores/LFM3 local. | I-03: comparador y spike IA local aprobados. |
 | 4 — Chat confiable | Consultas naturales con evidencia y límites. | I-04: chat integrado, pruebas de exactitud y abstención. |
 | 5 — Reportes | Configurar y descargar PDF con narrativa y gráficos. | I-05: PDF completo desde una instantánea estadística. |
 | 6 — Endurecimiento y publicación | Verificar, medir y operar el MVP. | I-06: aceptación, seguridad y despliegue comprobados. |
@@ -30,8 +30,8 @@ No se espera a terminar todos los endpoints para desarrollar frontend. Los fixtu
 | --- | --- | --- | --- |
 | 1 | D1-01 shell/navegación (10 h); D1-02 filtros/estado (10 h); D1-03 contratos/fixtures (8 h). | D2-01 auditoría (12 h); D2-02 acceso seguro/spike Prisma (8 h); D2-03 catálogo (8 h). | I-01, 4 h cada uno: contrato aprobado; al cierre UI usa catálogo y fixtures sin microdatos. |
 | 2 | D1-04 mapa/GeoJSON (14 h); D1-05 detalle/gráficos (10 h); D1-06 pruebas mapa (4 h). | D2-04 consultas/filtros/privacidad (16 h); D2-05 endpoint estadísticas (8 h); D2-06 regresiones SQL/API (4 h). | I-02, 4 h cada uno: filtros cambian coropleta y panel, cifras cotejadas con SQL. |
-| 3 | D1-07 comparador (16 h); D1-08 filtros cruzados/referencia (8 h); D1-09 regresiones comparador (4 h). | D2-07 endpoint comparación (12 h); D2-08 pruebas comparativas (6 h); D2-09 spike embeddings/proveedor (10 h). | I-03, 4 h cada uno: comparación real; modelo de consulta compatible y proveedor API aprobados. |
-| 4 | D1-10 interfaz chat (16 h); D1-11 tablas/gráficos/fuentes (8 h); D1-12 errores/abstención (4 h). | D2-10 herramientas SQL/proveedor (12 h); D2-11 búsqueda híbrida (8 h); D2-12 validación/antialucinaciones (8 h). | I-04, 4 h cada uno: preguntas económicas, educativas y exploratorias con fuentes y límites. |
+| 3 | D1-07 comparador (16 h); D1-08 filtros cruzados/referencia (8 h); D1-09 regresiones comparador (4 h). | D2-07 endpoint comparación (12 h); D2-08 pruebas comparativas (6 h); D2-09 spike embeddings/LFM3 local (10 h). | I-03, 4 h cada uno: comparación real; compatibilidad vectorial y carga local LFM3 CPU q4 comprobadas. |
+| 4 | D1-10 interfaz chat (16 h); D1-11 tablas/gráficos/fuentes (8 h); D1-12 errores/abstención (4 h). | D2-10 herramientas SQL/LFM3 local (12 h); D2-11 búsqueda híbrida (8 h); D2-12 validación/antialucinaciones (8 h). | I-04, 4 h cada uno: preguntas económicas, educativas y exploratorias con fuentes y límites. |
 | 5 | D1-13 configuración/descarga (12 h); D1-14 gráficos compartidos SSR (8 h); D1-15 pruebas reporte (8 h). | D2-13 snapshot del reporte (8 h); D2-14 PDF del servidor (14 h); D2-15 pruebas PDF/degradación (6 h). | I-05, 4 h cada uno: PDF descargable, legible y consistente; sin almacenamiento extra. |
 | 6 | D1-16 accesibilidad/rendimiento visual (10 h); D1-17 E2E (8 h); D1-18 correcciones/guía (10 h). | D2-16 despliegue/seguridad (12 h); D2-17 carga/planes (8 h); D2-18 correcciones/runbook (8 h). | I-06, 4 h cada uno: piloto publicado con smoke tests y rollback ensayado. |
 
@@ -45,7 +45,7 @@ Estos seis issues son compartidos; su esfuerzo es **4 h por dev**, no 4 h totale
 | --- | --- | --- | --- | --- |
 | I-01 | Aprobar contrato y base de integración — P0 | Ambos, 4 h/persona, fase 1 | Ninguna; usa corte inicial de D2-01 y este contrato. | Contrato, ejemplos sintéticos y definiciones aprobados antes de implementar consumidores/endpoints. |
 | I-02 | Integrar explorador con estadísticas reales — P0 | Ambos, 4 h/persona, S2 | I-01, D1-04…06, D2-04…06. | Demo territorial + evidencia de cifras, vacíos y supresión. |
-| I-03 | Integrar comparador y aprobar viabilidad IA — P0 | Ambos, 4 h/persona, S3 | I-02, D1-07…09, D2-07…09. | Demo de comparación; registro de proveedor/modelo, permisos de datos y compatibilidad vectorial. |
+| I-03 | Integrar comparador y aprobar viabilidad IA local — P0 | Ambos, 4 h/persona, S3 | I-02, D1-07…09, D2-07…09. | Demo de comparación; modelo local/archivos y recursos disponibles, autorización de datos y compatibilidad vectorial. |
 | I-04 | Integrar chat y validar evidencia — P0 | Ambos, 4 h/persona, S4 | I-03, D1-10…12, D2-10…12. | Casos de preguntas verificables, ambiguas, no soportadas y de inyección. |
 | I-05 | Integrar generación y descarga PDF — P0 | Ambos, 4 h/persona, S5 | I-04, D1-13…15, D2-13…15. | Reporte de muestra con secciones/filtros, gráfico y análisis trazables. |
 | I-06 | Aceptar y publicar el MVP — P0 | Ambos, 4 h/persona, S6 | I-05, D1-16…18, D2-16…18. | URL piloto, evidencia de aceptación, checklist de release y plan de rollback. |
@@ -76,7 +76,7 @@ flowchart LR
     SQL --> MAP["I-02: mapa"]
     SQL --> CMP["D2-07: comparación"]
     CMP --> I3["I-03: comparador"]
-    SP["D2-09: compatibilidad de vectores y API"] --> I3
+    SP["D2-09: compatibilidad de vectores y LFM3 local"] --> I3
     I3 --> AI["I-04: chat con herramientas"]
     SQL --> SNAP["D2-13: snapshot reporte"]
     AI --> SNAP
@@ -93,7 +93,7 @@ flowchart LR
 | Categorías/período de ingresos desconocidos | Mostrar categorías verificadas y período no documentado. | Si impide definir filtros/indicadores al cerrar I-01. |
 | Incompatibilidad Prisma RC | Spike acotado D2-02; reutilizar SQL parametrizado compatible. | Si consume la reserva S1; no migrar o actualizar toda la plataforma sin evidencia. |
 | Embeddings sin procedencia compatible | Mantener trabajo SQL/UI y recuperar configuración histórica. | I-03 no se aprueba como completo; no regenerar el conjunto ni simular búsqueda. |
-| Proveedor sin autorización o cuota | Implementar herramientas/fixtures, no enviar registros. | Si no se resuelve antes de I-03. El alcance IA requiere nueva fecha. |
+| Archivos LFM3 ausentes/incompatibles o recursos locales insuficientes | Implementar herramientas/fixtures y pruebas deterministas; no simular disponibilidad del modelo. | Si no se resuelve antes de I-03, registrar bloqueo y reestimar la integración IA local. |
 | PDF no cabe en runtime | Usar despliegue Node.js persistente con Chromium; reducir complejidad de plantilla. | Si supera recursos/presupuesto medido aun con límites. |
 
 La reserva absorbe incidentes moderados; no es autorización para omitir búsqueda semántica, secciones PDF, pruebas o alguna de las cuatro funcionalidades.

@@ -10,7 +10,7 @@ Se reutilizarán PostgreSQL, la tabla y los embeddings existentes. SQL calcular�
 
 **Equipo:** dos desarrolladores full-stack. El trabajo se organiza en **seis fases sin duración de calendario fija**. Estimación orientativa: **384 h planificadas + 96 h de reserva = 480 h-persona**. Las horas de integración ya están incluidas, no se suman dos veces.
 
-La estimación supone acceso de lectura a PostgreSQL, autorización de uso de los datos, un proveedor LLM aprobado, disponibilidad de un GeoJSON con licencia adecuada y un entorno donde ejecutar Node.js y Chromium. Si una condición falla, se registra el bloqueo y se reestima: no se oculta como trabajo completado.
+La estimación supone acceso de lectura a PostgreSQL, autorización de uso de los datos, disponibilidad local del modelo LFM3, archivos requeridos accesibles mediante `LFM3_MODEL_DIR` (por defecto `models`), recursos suficientes para inferencia CPU q4, un GeoJSON con licencia adecuada y un entorno donde ejecutar Node.js y Chromium. La decisión del proyecto es no usar API externa/OpenAI para IA. Si faltan datos, archivos o recursos locales, se registra el bloqueo y se reestima; no se oculta como trabajo completado.
 
 ## 2. Documentos y orden de lectura
 
@@ -45,7 +45,7 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 | Interfaz, filtros, MapLibre, ECharts y accesibilidad | Dev 1 | Dev 2 revisa semántica de datos. |
 | Contratos compartidos y fixtures | Ambos mantienen los esquemas Zod; Dev 1 prepara fixtures | Dev 2 valida entradas/salidas reales. |
 | PostgreSQL, consultas, validaciones y endpoints | Dev 2 | Dev 1 prueba contratos y experiencia de error. |
-| Herramientas IA, proveedor API, vectores y PDF | Dev 2 | Dev 1 integra bloques y verifica presentación. |
+| Herramientas IA, LFM3 local, vectores y PDF | Dev 2 | Dev 1 integra bloques y verifica presentación. |
 | Especificación de gráficos reutilizable en PDF | Dev 1 | Dev 2 implementa render del servidor. |
 | Pruebas de interfaz/E2E y pruebas SQL/API/IA | Dev 1 / Dev 2, respectivamente | Revisión cruzada, sin duplicar escenarios. |
 | Integración, publicación y aceptación | Ambos | Dev 2 opera; Dev 1 verifica recorridos reales. |
@@ -64,7 +64,7 @@ El acceso seguro mínimo se resolverá con el control del gateway/proxy existent
 
 - [ ] I-01 — Contratos y definiciones de datos acordados.
 - [ ] I-02 — Mapa conectado a estadísticas reales.
-- [ ] I-03 — Comparador integrado y compatibilidad vectorial/proveedor comprobada.
+- [ ] I-03 — Comparador integrado y compatibilidad vectorial/modelo local comprobada.
 - [ ] I-04 — Chat respaldado por herramientas, sin SQL libre.
 - [ ] I-05 — Reporte PDF íntegro y consistente con los filtros.
 - [ ] I-06 — MVP verificado y publicado.
