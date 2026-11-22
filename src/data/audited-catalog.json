@@ -1,0 +1,62 @@
+{
+  "audited": true,
+  "dataset": {
+    "id": "sv-nemotron-local",
+    "version": "audit-local-2026-11-22",
+    "sourceLabel": "Fuente no documentada; tabla local NemotronSvMuestra",
+    "collectionPeriod": null,
+    "incomePeriod": null
+  },
+  "departments": [
+    { "id": "ahuachapan", "label": "Ahuachapán", "geoFeatureId": "ahuachapan", "sqlValues": ["Ahuachapán"] },
+    { "id": "cabanas", "label": "Cabañas", "geoFeatureId": "cabanas", "sqlValues": ["Cabañas"] },
+    { "id": "chalatenango", "label": "Chalatenango", "geoFeatureId": "chalatenango", "sqlValues": ["Chalatenango"] },
+    { "id": "cuscatlan", "label": "Cuscatlán", "geoFeatureId": "cuscatlan", "sqlValues": ["Cuscatlán"] },
+    { "id": "la-libertad", "label": "La Libertad", "geoFeatureId": "la-libertad", "sqlValues": ["La Libertad"] },
+    { "id": "la-paz", "label": "La Paz", "geoFeatureId": "la-paz", "sqlValues": ["La Paz"] },
+    { "id": "la-union", "label": "La Unión", "geoFeatureId": "la-union", "sqlValues": ["La Unión"] },
+    { "id": "morazan", "label": "Morazán", "geoFeatureId": "morazan", "sqlValues": ["Morazán"] },
+    { "id": "san-miguel", "label": "San Miguel", "geoFeatureId": "san-miguel", "sqlValues": ["San Miguel"] },
+    { "id": "san-salvador", "label": "San Salvador", "geoFeatureId": "san-salvador", "sqlValues": ["San Salvador"] },
+    { "id": "san-vicente", "label": "San Vicente", "geoFeatureId": "san-vicente", "sqlValues": ["San Vicente"] },
+    { "id": "santa-ana", "label": "Santa Ana", "geoFeatureId": "santa-ana", "sqlValues": ["Santa Ana"] },
+    { "id": "sonsonate", "label": "Sonsonate", "geoFeatureId": "sonsonate", "sqlValues": ["Sonsonate"] },
+    { "id": "usulutan", "label": "Usulután", "geoFeatureId": "usulutan", "sqlValues": ["Usulután"] }
+  ],
+  "education": {
+    "primaria-completa": { "label": "Primaria completa", "values": ["Primaria completa"] },
+    "primaria-incompleta": { "label": "Primaria incompleta", "values": ["Primaria incompleta"] },
+    "secundaria-completa": { "label": "Secundaria completa", "values": ["Secundaria completa"] },
+    "secundaria-incompleta": { "label": "Secundaria incompleta", "values": ["Secundaria incompleta"] },
+    "sin-escolaridad": { "label": "Sin escolaridad", "values": ["Sin escolaridad"] },
+    "tecnico": { "label": "Técnico", "values": ["Técnico"] },
+    "universitario": { "label": "Universitario", "values": ["Universitario"] }
+  },
+  "occupations": {
+    "agricultora": { "label": "Agricultora", "values": ["Agricultora"] },
+    "artesano": { "label": "Artesano", "values": ["Artesano"] },
+    "comerciante": { "label": "Comerciante", "values": ["Comerciante"] },
+    "contador": { "label": "Contador", "values": ["Contador"] },
+    "empleado-de-tienda": { "label": "Empleado de tienda", "values": ["Empleado de tienda"] },
+    "empleado-publico": { "label": "Empleado público", "values": ["Empleado público"] },
+    "empresario": { "label": "Empresario", "values": ["Empresario"] },
+    "ingeniero": { "label": "Ingeniero", "values": ["Ingeniero"] },
+    "jornalero-agricola": { "label": "Jornalero agrícola", "values": ["Jornalero agrícola"] },
+    "maestro-rural": { "label": "Maestro rural", "values": ["Maestro rural"] },
+    "operario-de-maquila": { "label": "Operario de maquila", "values": ["Operario de maquila"] },
+    "profesional": { "label": "Profesional", "values": ["Profesional"] },
+    "tecnico": { "label": "Técnico", "values": ["Técnico"] },
+    "trabajadora-domestica": { "label": "Trabajadora doméstica", "values": ["Trabajadora doméstica"] },
+    "vendedora-ambulante": { "label": "Vendedora ambulante", "values": ["Vendedora ambulante"] }
+  },
+  "goals": {
+    "acceder-a-credito-para-mejorar-mi-casa": { "label": "Acceder a crédito para mejorar mi casa", "values": ["Acceder a crédito para mejorar mi casa"] },
+    "ahorrar-para-una-emergencia-medica": { "label": "Ahorrar para una emergencia médica", "values": ["Ahorrar para una emergencia médica"] },
+    "comprar-un-terreno": { "label": "Comprar un terreno", "values": ["Comprar un terreno"] },
+    "conseguir-trabajo-formal-con-prestaciones": { "label": "Conseguir trabajo formal con prestaciones", "values": ["Conseguir trabajo formal con prestaciones"] },
+    "enviar-remesas-a-mi-familia": { "label": "Enviar remesas a mi familia", "values": ["Enviar remesas a mi familia"] },
+    "mejorar-mis-ingresos-con-capacitacion-tecnica": { "label": "Mejorar mis ingresos con capacitación técnica", "values": ["Mejorar mis ingresos con capacitación técnica"] },
+    "que-mis-hijos-terminen-el-bachillerato": { "label": "Que mis hijos terminen el bachillerato", "values": ["Que mis hijos terminen el bachillerato"] },
+    "tener-un-negocio-propio": { "label": "Tener un negocio propio", "values": ["Tener un negocio propio"] }
+  }
+}

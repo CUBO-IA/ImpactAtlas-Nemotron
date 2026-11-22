@@ -9,4 +9,5 @@ export const contract = contractFromJson<Contract>(contractJson);
 export const db = postgres({
   contract,
   url: process.env['DATABASE_URL']!,
+  poolOptions: { connectionTimeoutMillis: 14_000 },
 });

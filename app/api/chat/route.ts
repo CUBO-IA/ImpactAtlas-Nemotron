@@ -1,24 +1,67 @@
+import { randomUUID } from "node:crypto";
+import { chatRequestSchema } from "@/src/contracts/chat";
+import { handleChat } from "@/src/server/chat";
+import { errorResponse, readJsonRequest, RequestError } from "@/src/server/request";
+import { LocalModelUnavailableError } from "@/src/ai/provider";
 import {
-  convertToModelMessages,
-  createUIMessageStreamResponse,
-  streamText,
-  toUIMessageStream,
-  type UIMessage,
-} from "ai";
-import { lfm3 } from "@/src/ai/lfm3";
+  ChatBusyError,
+  ChatCancelledError,
+  ChatTimeoutError,
+  runChatRequest,
+} from "@/src/server/chat-runtime";
 
-export const maxDuration = 300;
+export const maxDuration = 45;
 
-export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
-
-  const result = streamText({
-    model: lfm3,
-    messages: await convertToModelMessages(messages),
-    temperature: 0.1,
+// Pilot access control is enforced by the configured gateway/proxy, not by this handler.
+const json = (body: unknown, status: number, requestId: string) =>
+  Response.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store", "X-Request-Id": requestId },
   });
 
-  return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
-  });
+export async function POST(request: Request) {
+  const requestId = randomUUID();
+
+  try {
+    return await runChatRequest(async (signal) => {
+      let body: unknown;
+      try {
+        body = await readJsonRequest(request, signal);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        return errorResponse(error instanceof RequestError
+          ? error
+          : new RequestError(400, "VALIDATION_ERROR", "No se pudo leer la solicitud."), requestId);
+      }
+
+      const parsed = chatRequestSchema.safeParse(body);
+      if (!parsed.success) {
+        return json({ error: { code: "VALIDATION_ERROR", message: "La solicitud no cumple el contrato." }, requestId }, 400, requestId);
+      }
+
+      try {
+        return json(await handleChat(parsed.data, requestId, signal), 200, requestId);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        if (error instanceof LocalModelUnavailableError) {
+          return errorResponse(new RequestError(503, "LOCAL_MODEL_UNAVAILABLE", error.message), requestId);
+        }
+        return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
+      }
+    }, request.signal);
+  } catch (error) {
+    if (error instanceof ChatBusyError) {
+      return Response.json(
+        { error: { code: "BUSY", message: "El servicio de chat está ocupado." }, requestId },
+        { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "1", "X-Request-Id": requestId } },
+      );
+    }
+    if (error instanceof ChatTimeoutError) {
+      return json({ error: { code: "TIME_BUDGET_EXCEEDED", message: "La solicitud de chat excedió el presupuesto de 45 segundos." }, requestId }, 504, requestId);
+    }
+    if (error instanceof ChatCancelledError) {
+      return json({ error: { code: "REQUEST_CANCELLED", message: "La solicitud de chat fue cancelada." }, requestId }, 499, requestId);
+    }
+    return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
+  }
 }

@@ -68,6 +68,7 @@ export const healthResponseSchema = z.strictObject({ status: z.enum(["ok", "unav
 
 export type DepartmentId = z.infer<typeof departmentIdSchema>;
 export type MetricId = z.infer<typeof metricIdSchema>;
+export type MetricValue = z.infer<typeof metricValueSchema>;
 export type GroupBy = z.infer<typeof groupBySchema>;
 export type Filters = z.infer<typeof filtersSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;

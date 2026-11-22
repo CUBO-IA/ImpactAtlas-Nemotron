@@ -1,5 +1,9 @@
 import path from "node:path";
+import { env } from "@huggingface/transformers";
 import { transformersJS } from "@browser-ai/transformers-js";
+
+env.allowLocalModels = true;
+env.allowRemoteModels = false;
 
 // ponytail: one shared q4/CPU instance; add a pool if parallel generations matter
 export const lfm3 = transformersJS("LFM3-1.7B-ONNX", {
