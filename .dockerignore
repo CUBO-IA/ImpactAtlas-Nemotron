@@ -1,0 +1,11 @@
+.git
+.github
+.next
+node_modules
+models
+*.log
+.env
+.env.*
+!.env.example
+src/db/*.sql.xz
+src/db/nemotron-sv-muestra.csv

@@ -13,7 +13,12 @@ import {
 import { chatPlanSchema } from "./tools.ts";
 import { lfm3 } from "./lfm3.ts";
 
-export const LOCAL_CHAT_TIMEOUT_MS = 75_000;
+/** Sin deadline propio: solo cancelación del cliente o un timeout explícito en pruebas. */
+function chatSignal(signal: AbortSignal | undefined, timeoutMs?: number): AbortSignal {
+  if (!timeoutMs) return signal ?? new AbortController().signal;
+  const deadline = AbortSignal.timeout(timeoutMs);
+  return signal ? AbortSignal.any([signal, deadline]) : deadline;
+}
 
 export type ToolCall =
   | {
@@ -114,13 +119,11 @@ export function createLocalChatProvider(options: {
 } = {}): ChatProvider {
   const model = options.model ?? lfm3;
   const generate = options.generate ?? generateText;
-  const timeoutMs = options.timeoutMs ?? LOCAL_CHAT_TIMEOUT_MS;
+  const timeoutMs = options.timeoutMs;
 
   return {
     async describeCapabilities(signal) {
-      const abortSignal = signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
-        : AbortSignal.timeout(timeoutMs);
+      const abortSignal = chatSignal(signal, timeoutMs);
       try {
         const result = await generate({
           model,
@@ -140,11 +143,8 @@ export function createLocalChatProvider(options: {
     },
     async selectFacts(input, signal) {
       if (!input.facts.length) return [];
-      // La redacción es un extra: un timeout propio no debe tumbar la respuesta verificada.
-      const budgetMs = Math.min(timeoutMs, 10_000);
-      const abortSignal = signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(budgetMs)])
-        : AbortSignal.timeout(budgetMs);
+      // La redacción es un extra: un timeout explícito no debe tumbar la respuesta verificada.
+      const abortSignal = chatSignal(signal, timeoutMs ? Math.min(timeoutMs, 10_000) : undefined);
       const selectionSchema = z.object({ ids: z.array(z.string()).max(3) }).strict();
       const options = input.facts.map(({ id, label, value, unit }) => ({
         id,
@@ -182,9 +182,7 @@ export function createLocalChatProvider(options: {
           ? { compare_departments: tools.compare_departments }
           : { get_statistics: tools.get_statistics };
       const toolName = isSemantic ? "search_semantic_evidence" : isComparison ? "compare_departments" : "get_statistics";
-      const abortSignal = signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
-        : AbortSignal.timeout(timeoutMs);
+      const abortSignal = chatSignal(signal, timeoutMs);
       try {
         const result = await generate({
           model,

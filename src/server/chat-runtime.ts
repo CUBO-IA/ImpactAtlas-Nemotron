@@ -1,6 +1,5 @@
 let activeChats = 0;
 const MAX_ACTIVE_CHATS = 2;
-export const CHAT_REQUEST_BUDGET_MS = 90_000;
 
 export class ChatBusyError extends Error {
   constructor() {
@@ -38,16 +37,19 @@ function waitForAbortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> 
   });
 }
 
+/** Sin presupuesto de tiempo por defecto: la inferencia local puede tardar más allá de 90 s. */
 export function runChatRequest<T>(
   task: (signal: AbortSignal) => Promise<T>,
   callerSignal?: AbortSignal,
-  budgetMs = CHAT_REQUEST_BUDGET_MS,
+  budgetMs?: number,
 ): Promise<T> {
   if (activeChats >= MAX_ACTIVE_CHATS) return Promise.reject(new ChatBusyError());
 
   activeChats += 1;
-  const deadline = AbortSignal.timeout(budgetMs);
-  const signal = callerSignal ? AbortSignal.any([callerSignal, deadline]) : deadline;
+  const deadline = budgetMs ? AbortSignal.timeout(budgetMs) : undefined;
+  const signal = callerSignal && deadline
+    ? AbortSignal.any([callerSignal, deadline])
+    : callerSignal ?? deadline ?? new AbortController().signal;
   let released = false;
   const release = () => {
     if (released) return;

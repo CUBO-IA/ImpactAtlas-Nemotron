@@ -89,7 +89,7 @@ test("ofrece comparación para la pregunta «cómo se comparan»", async () => {
   assert.deepEqual(availableTools, ["compare_departments"]);
 });
 
-test("usa búsqueda semántica para preguntas sobre metas", async () => {
+test("usa búsqueda semántica solo para similitud explícita", async () => {
   let availableTools;
   const provider = createLocalChatProvider({
     model: {},
@@ -98,7 +98,7 @@ test("usa búsqueda semántica para preguntas sobre metas", async () => {
       return { text: "", toolCalls: [] };
     },
   });
-  await provider.plan({ question: "¿Cuáles son las metas principales sobre crédito?" });
+  await provider.plan({ question: "¿Qué categorías similares a técnico aparecen en la muestra?" });
   assert.deepEqual(availableTools, ["search_semantic_evidence"]);
 });
 

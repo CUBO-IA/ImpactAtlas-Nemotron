@@ -18,5 +18,23 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    profiles: ["poc"]
+    build: .
+    container_name: sv-nemotron-poc
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${POC_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-nemotron}
+      DATA_CATALOG_PATH: /app/src/data/audited-catalog.json
+      LFM3_MODEL_DIR: /app/models
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-onnx-community/embeddinggemma-2-ONNX}
+    volumes:
+      - ./models:/app/models:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db_data:

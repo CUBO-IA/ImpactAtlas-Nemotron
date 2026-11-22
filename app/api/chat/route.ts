@@ -10,8 +10,7 @@ import {
   runChatRequest,
 } from "@/src/server/chat-runtime";
 
-export const maxDuration = 90;
-
+// Sin maxDuration: la inferencia LFM3 local puede superar 90 s en el POC.
 // Pilot access control is enforced by the configured gateway/proxy, not by this handler.
 const json = (body: unknown, status: number, requestId: string) =>
   Response.json(body, {
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof ChatTimeoutError) {
-      return json({ error: { code: "TIME_BUDGET_EXCEEDED", message: "La solicitud de chat excedió el presupuesto de 90 segundos." }, requestId }, 504, requestId);
+      return json({ error: { code: "TIME_BUDGET_EXCEEDED", message: "La solicitud de chat excedió el presupuesto de tiempo." }, requestId }, 504, requestId);
     }
     if (error instanceof ChatCancelledError) {
       return json({ error: { code: "REQUEST_CANCELLED", message: "La solicitud de chat fue cancelada." }, requestId }, 499, requestId);
