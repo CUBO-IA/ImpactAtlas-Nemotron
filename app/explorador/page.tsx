@@ -236,7 +236,7 @@ function ExploradorContent() {
             >
               Explorador y Mapa
             </Link>
-            <Link href="/#comparador" className="transition-colors hover:text-[#002b7f]">
+            <Link href="/comparador" className="transition-colors hover:text-[#002b7f]">
               Comparador
             </Link>
             <Link href="/#chat" className="transition-colors hover:text-[#002b7f]">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import type { DepartmentId, MetricValue } from "@/src/contracts/common";
 import { DEPARTMENTS } from "@/src/lib/catalog-data";
 import {
@@ -12,6 +13,7 @@ import {
   Target,
   AlertTriangle,
   Info,
+  GitCompare,
 } from "lucide-react";
 
 interface StatisticsRow {
@@ -85,12 +87,24 @@ export function DetailPanel({
           </p>
         </div>
 
-        {isSuppressed && (
-          <div className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-            <AlertTriangle className="size-3.5" />
-            Muestra insuficiente (&lt; 5) — Datos suprimidos
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedDepartment && (
+            <Link
+              href={`/comparador?depts=${selectedDepartment},san-salvador&ref=${selectedDepartment}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:border-[#002b7f] hover:text-[#002b7f] hover:bg-white transition-all shadow-2xs"
+            >
+              <GitCompare className="size-3.5 text-[#ff6a00]" />
+              Comparar este departamento
+            </Link>
+          )}
+
+          {isSuppressed && (
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+              <AlertTriangle className="size-3.5" />
+              Muestra insuficiente (&lt; 5) — Datos suprimidos
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 4 KPI Cards */}

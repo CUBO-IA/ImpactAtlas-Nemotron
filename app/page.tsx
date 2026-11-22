@@ -39,7 +39,7 @@ export default function Home() {
               Explorador y Mapa
             </Link>
             <Link
-              href="#comparador"
+              href="/comparador"
               className="transition-colors hover:text-[#002b7f]"
             >
               Comparador
@@ -206,12 +206,15 @@ export default function Home() {
               </Link>
 
               {/* Function 2: Comparador */}
-              <div id="comparador" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">
+              <Link
+                href="/comparador"
+                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-400 hover:shadow-md flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] transition-transform group-hover:scale-105">
                     <GitCompare className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950">
+                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#ff6a00] transition-colors">
                     2. Comparador
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
@@ -219,10 +222,10 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#ff6a00]">
-                  <span>Comparación territorial</span>
+                  <span>Abrir comparador</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </div>
+              </Link>
 
               {/* Function 3: Chat */}
               <div id="chat" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-300 hover:shadow-md flex flex-col justify-between">
