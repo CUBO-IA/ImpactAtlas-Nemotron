@@ -24,7 +24,7 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 | Chat LFM3 local | Implementación presente, integración/aceptación no resueltas | Proveedor y orquestador existen; disponibilidad del modelo, grounding completo y comportamiento actual no validados. |
 | Búsqueda semántica | Desactivada por defecto; compatibilidad bloqueada | Requiere dos variables explícitas; auditoría no confirmó procedencia ni relevancia de embeddings. |
 | PDF | Descarga y generación presentes; cierre parcial | Hay reporte de descarga local y cambios recientes para ChartSpec/paginación; faltan criterios y legibilidad final. |
-| Operación / release | Pendiente | No hay despliegue de aplicación, HTTPS/acceso, rate limit ni backup/rollback ensayados documentados. |
+| Operación / release | POC local verificado; publicación pendiente | `docs/poc-local.md` registra el POC Docker local (sin auth ni HTTPS, por ser local) con API, chat y PDF verificados. No hay despliegue público, HTTPS/acceso, rate limit ni backup/rollback ensayados. |
 
 ## Estado funcional
 

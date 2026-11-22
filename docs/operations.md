@@ -1,7 +1,9 @@
 # Operación y despliegue — D2-16 a D2-18
 
-Este documento es un runbook de preparación, no evidencia de que exista un
-entorno publicado. El repositorio solo define PostgreSQL local en
+Este documento es un runbook de preparación para un entorno publicado, no
+evidencia de que exista uno. El entorno de prueba es local (`docs/poc-local.md`):
+no requiere HTTPS, autenticación del piloto ni rate limit porque no expone
+servicios fuera del host; eso no cubre los criterios de publicación listados aquí. El repositorio solo define PostgreSQL local en
 `docker-compose.yml`; no configura un servicio de aplicación, gateway HTTPS,
 autenticación del piloto, rate limit, monitorización ni copias automáticas.
 No se ha accedido a servidores ni se han cambiado bases de datos.

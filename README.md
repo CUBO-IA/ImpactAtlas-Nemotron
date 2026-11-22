@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Estado de la implementación
 
-Consulta el [inventario de implementación y pendientes](docs/implementation-inventory.md) para conocer qué está implementado, qué está parcial y qué permanece bloqueado.
+Consulta el [inventario de implementación y pendientes](docs/implementation-inventory.md) para conocer qué está implementado, qué está parcial y qué permanece bloqueado. Para levantar el entorno local de prueba sin control de accesos, sigue [docs/poc-local.md](docs/poc-local.md).
 
 ## Base de datos y migración del CSV
 
