@@ -229,6 +229,9 @@ function ComparadorContent({ query }: { query: string }) {
     updateUrlParams(selectedDepts, referenceDept, nextFilters);
   }
   const explorerHref = `/explorador?${filterSearchParams(filters).toString()}`;
+  const chatParams = filterSearchParams(filters);
+  if (selectedDepts.length) chatParams.set("depts", selectedDepts.join(","));
+  const chatHref = `/chat${chatParams.size ? `?${chatParams.toString()}` : ""}`;
 
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
@@ -259,7 +262,7 @@ function ComparadorContent({ query }: { query: string }) {
               Comparador Departamental
             </Link>
             <Link
-              href="#chat"
+              href={chatHref}
               className="transition-colors hover:text-[#002b7f]"
             >
               Chat Asistente

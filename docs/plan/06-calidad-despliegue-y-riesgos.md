@@ -109,7 +109,7 @@ Medir en entorno candidato con configuración/versión de datos documentadas. So
 | Estadísticas por departamento | p95 ≤ 2 s | 20 peticiones representativas tras calentamiento, sin caché de resultados. |
 | Comparación de 14 departamentos | p95 ≤ 3 s | Métricas y tres distribuciones; filtros amplios/selectivos. |
 | Búsqueda semántica | p95 ≤ 10 s | Incluye embedding de consulta con modelo caliente; registrar frío por separado. |
-| Chat completo | p95 ≤ 30 s | LFM3 local caliente; incluye herramientas; presupuesto duro de 45 s. Medir cold start por separado. |
+| Chat completo | p95 ≤ 30 s | LFM3 local caliente; incluye herramientas; presupuesto global duro de 90 s y timeout de proveedor de 75 s. Medir cold start por separado. |
 | PDF | p95 ≤ 60 s | Plantilla ≤20 páginas, una generación concurrente; presupuesto duro de 90 s. |
 | UI | Sin resultado obsoleto ni bloqueo de navegación | Mapa/gráficos se cargan por pantalla; verificar móvil y escritorio. |
 

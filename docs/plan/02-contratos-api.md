@@ -487,7 +487,7 @@ Sin coincidencias es 200, no 404. Pregunta ambigua o sin evidencia es 200 con es
 | Cuerpo JSON | 64 KiB, comprobado en proxy y servidor, incluso sin `Content-Length`. |
 | Consulta SQL | `statement_timeout` de 5 s; timeout transaccional/limpieza comprobados. |
 | Estadísticas/comparador | Presupuesto de petición de 15 s. |
-| Chat | Presupuesto total de 45 s, incluyendo herramientas e inferencia LFM3 local; máximo 4 herramientas. |
+| Chat | Presupuesto total de 90 s, incluyendo herramientas e inferencia LFM3 local; máximo 4 herramientas. Timeout interno LFM3 de 75 s para reservar margen al cierre de la solicitud; configurar el proxy/gateway por encima de 90 s (recomendado ≥120 s). |
 | Reporte | Presupuesto total de 90 s; proxy al menos 120 s. |
 | Concurrencia inicial por instancia | 1 PDF, 2 chats; rechazar exceso con 429, sin cola. |
 | Rate limit por identidad/IP confiable | 60 consultas analíticas/min, 10 chats/min, 2 PDF/min; calibrar en piloto. |

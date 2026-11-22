@@ -45,7 +45,7 @@ export default function Home() {
               Comparador
             </Link>
             <Link
-              href="#chat"
+              href="/chat"
               className="transition-colors hover:text-[#002b7f]"
             >
               Asistente IA
@@ -108,7 +108,7 @@ export default function Home() {
                 Abrir Explorador y Mapa
               </Link>
               <a
-                href="#chat"
+              href="/chat"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50"
               >
                 <Bot className="size-4 text-[#ff6a00]" />
@@ -228,7 +228,7 @@ export default function Home() {
               </Link>
 
               {/* Function 3: Chat */}
-              <div id="chat" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-300 hover:shadow-md flex flex-col justify-between">
+              <Link href="/chat" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-300 hover:shadow-md flex flex-col justify-between">
                 <div>
                   <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] transition-transform group-hover:scale-105">
                     <Bot className="size-6" />
@@ -237,14 +237,14 @@ export default function Home() {
                     3. Chat & Asistente IA
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Consultas conversacionales en español con herramientas SQL controladas y búsqueda semántica de metas en vectores de 768 dimensiones.
+                    Consultas conversacionales sobre el catálogo disponible, con respuestas sujetas a las capacidades actuales del asistente.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">
                   <span>Consultas en lenguaje natural</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </div>
+              </Link>
 
               {/* Function 4: Reportes */}
               <div id="reportes" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">

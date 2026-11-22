@@ -13,6 +13,8 @@ import {
 import { chatPlanSchema } from "./tools.ts";
 import { lfm3 } from "./lfm3.ts";
 
+export const LOCAL_CHAT_TIMEOUT_MS = 75_000;
+
 export type ToolCall =
   | {
       name: "get_statistics";
@@ -33,6 +35,13 @@ export class LocalModelUnavailableError extends Error {
   constructor() {
     super("El modelo local no está disponible o no pudo inicializarse.");
     this.name = "LocalModelUnavailableError";
+  }
+}
+
+export class InvalidLocalChatPlanError extends Error {
+  constructor() {
+    super("El modelo local generó una llamada a herramienta no válida.");
+    this.name = "InvalidLocalChatPlanError";
   }
 }
 
@@ -99,14 +108,14 @@ export function createLocalChatProvider(options: {
 } = {}): ChatProvider {
   const model = options.model ?? lfm3;
   const generate = options.generate ?? generateText;
-  const timeoutMs = options.timeoutMs ?? 45_000;
+  const timeoutMs = options.timeoutMs ?? LOCAL_CHAT_TIMEOUT_MS;
 
   return {
     async plan(input, signal) {
       let text: string;
       let sdkCalls: unknown[] = [];
-      const isComparison = /\b(compar(?:a|ar|ación|ativo)|diferencia|versus|vs\.?)\b/i.test(input.question);
-      const isSemantic = /\b(temas?|categor[ií]as?|similares?|sem[aá]ntic[oa]s?|explor(?:a|ar|aci[oó]n))\b/i.test(input.question);
+      const isComparison = /\b(compar(?:a|an|ar|ación|ativo)|diferencias?|versus|vs)\b/i.test(input.question);
+      const isSemantic = /\b(metas?|temas?|categor[ií]as?|similares?|sem[aá]ntic[oa]s?|explor(?:a|ar|aci[oó]n))\b/i.test(input.question);
       const activeTools: ToolSet = isSemantic
         ? { search_semantic_evidence: tools.search_semantic_evidence }
         : isComparison
@@ -142,10 +151,32 @@ export function createLocalChatProvider(options: {
           return chatPlanSchema.parse({ status: "execute", calls: candidate.calls });
         }
       }
-      const plan: unknown = calls.length
-        ? { status: "execute", calls }
+      const normalizedCalls = calls.map((call) => {
+        if (!call || typeof call !== "object" || !("name" in call) || call.name !== "compare_departments"
+          || !("input" in call) || !call.input || typeof call.input !== "object"
+          || !("breakdowns" in call.input) || !Array.isArray(call.input.breakdowns)) return call;
+        const breakdowns = call.input.breakdowns.filter((value) => breakdownSchema.safeParse(value).success);
+        if (breakdowns.length !== call.input.breakdowns.length) {
+          console.warn("Ignored unsupported breakdowns in local chat plan", {
+            count: call.input.breakdowns.length - breakdowns.length,
+          });
+        }
+        return {
+          ...call,
+          input: { ...call.input, breakdowns },
+        };
+      });
+      const plan: unknown = normalizedCalls.length
+        ? { status: "execute", calls: normalizedCalls }
         : { status: "needs_clarification", question: "Se necesita precisar la consulta.", calls: [] };
-      return chatPlanSchema.parse(plan);
+      const parsedPlan = chatPlanSchema.safeParse(plan);
+      if (!parsedPlan.success) {
+        console.error("Invalid local chat plan", {
+          issues: parsedPlan.error.issues.map(({ code, path }) => ({ code, path: path.map(String) })),
+        });
+        throw new InvalidLocalChatPlanError();
+      }
+      return parsedPlan.data;
     },
   };
 }

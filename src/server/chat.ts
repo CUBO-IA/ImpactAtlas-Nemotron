@@ -174,6 +174,14 @@ export function createChatOrchestrator(
   dependencies: { provider: NonNullable<ReturnType<typeof getChatProvider>>; services: ChatServices },
 ) {
   return async function orchestrate(request: ChatRequest, signal?: AbortSignal): Promise<ChatData> {
+    if (/^(?:hola|saludos|buenos días|buenas tardes|buenas noches)[\s!.¿?]*$/i.test(request.question.trim())) {
+      return {
+        status: "needs_clarification",
+        blocks: [{ type: "text", text: "¿Qué indicador deseas consultar y para qué alcance territorial?", evidenceIds: [] }],
+        evidence: [],
+        toolsUsed: [],
+      };
+    }
     if (unsupportedQuestion(request.question)) {
       return abstention("La muestra solo permite análisis descriptivos; no puede establecer causalidad, representatividad nacional ni predicciones.");
     }
@@ -218,7 +226,10 @@ export function createChatOrchestrator(
         status: "insufficient_evidence",
         blocks: [{
           type: "text",
-          text: "No hay evidencia publicable para responder con los filtros indicados.",
+          text: evidence.some((item) => item.kind === "semantic_examples"
+            && item.description === "La búsqueda semántica está deshabilitada; no se puede ofrecer una interpretación.")
+            ? "La búsqueda semántica está deshabilitada; no se puede ofrecer una interpretación."
+            : "No hay evidencia publicable para responder con los filtros indicados.",
           evidenceIds: [],
         }],
         evidence,

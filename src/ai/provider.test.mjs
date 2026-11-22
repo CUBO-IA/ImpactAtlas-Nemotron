@@ -3,6 +3,7 @@ import test from "node:test";
 import { env } from "@huggingface/transformers";
 import {
   createLocalChatProvider,
+  InvalidLocalChatPlanError,
   LocalModelUnavailableError,
 } from "./provider.ts";
 
@@ -73,6 +74,83 @@ test("valida el formato local de tool call generado por LFM3", async () => {
     status: "execute",
     calls: [{ name: "get_statistics", input: { groupBy: "department", metrics: ["income_mean"] } }],
   });
+});
+
+test("ofrece comparación para la pregunta «cómo se comparan»", async () => {
+  let availableTools;
+  const provider = createLocalChatProvider({
+    model: {},
+    generate: async (options) => {
+      availableTools = Object.keys(options.tools);
+      return { text: "", toolCalls: [] };
+    },
+  });
+  await provider.plan({ question: "¿Cómo se comparan los ingresos entre Santa Ana y San Salvador?" });
+  assert.deepEqual(availableTools, ["compare_departments"]);
+});
+
+test("usa búsqueda semántica para preguntas sobre metas", async () => {
+  let availableTools;
+  const provider = createLocalChatProvider({
+    model: {},
+    generate: async (options) => {
+      availableTools = Object.keys(options.tools);
+      return { text: "", toolCalls: [] };
+    },
+  });
+  await provider.plan({ question: "¿Cuáles son las metas principales sobre crédito?" });
+  assert.deepEqual(availableTools, ["search_semantic_evidence"]);
+});
+
+test("descarta desgloses fuera del catálogo sin perder una comparación válida", async () => {
+  const provider = createLocalChatProvider({
+    model: {},
+    generate: async () => ({
+      text: "",
+      toolCalls: [{
+        toolName: "compare_departments",
+        input: {
+          departmentIds: ["santa-ana", "san-salvador"],
+          referenceDepartmentId: "san-salvador",
+          metrics: ["income_mean"],
+          breakdowns: ["education", "invalid_dimension"],
+        },
+      }],
+    }),
+  });
+
+  assert.deepEqual(await provider.plan({ question: "compara ingresos" }), {
+    status: "execute",
+    calls: [{
+      name: "compare_departments",
+      input: {
+        departmentIds: ["santa-ana", "san-salvador"],
+        referenceDepartmentId: "san-salvador",
+        metrics: ["income_mean"],
+        breakdowns: ["education"],
+      },
+    }],
+  });
+});
+
+test("clasifica argumentos de herramienta inválidos como plan local inválido", async () => {
+  const provider = createLocalChatProvider({
+    model: {},
+    generate: async () => ({
+      text: "",
+      toolCalls: [{
+        toolName: "compare_departments",
+        input: {
+          departmentIds: ["santa-ana", "san-salvador"],
+          referenceDepartmentId: "san-salvador",
+          metrics: ["not-a-metric"],
+          breakdowns: [],
+        },
+      }],
+    }),
+  });
+
+  await assert.rejects(provider.plan({ question: "compara ingresos" }), InvalidLocalChatPlanError);
 });
 
 test("reporta claramente que el modelo local no pudo inicializarse", async () => {

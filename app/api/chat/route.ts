@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chatRequestSchema } from "@/src/contracts/chat";
 import { handleChat } from "@/src/server/chat";
 import { errorResponse, readJsonRequest, RequestError } from "@/src/server/request";
-import { LocalModelUnavailableError } from "@/src/ai/provider";
+import { InvalidLocalChatPlanError, LocalModelUnavailableError } from "@/src/ai/provider";
 import {
   ChatBusyError,
   ChatCancelledError,
@@ -10,7 +10,7 @@ import {
   runChatRequest,
 } from "@/src/server/chat-runtime";
 
-export const maxDuration = 45;
+export const maxDuration = 90;
 
 // Pilot access control is enforced by the configured gateway/proxy, not by this handler.
 const json = (body: unknown, status: number, requestId: string) =>
@@ -46,6 +46,13 @@ export async function POST(request: Request) {
         if (error instanceof LocalModelUnavailableError) {
           return errorResponse(new RequestError(503, "LOCAL_MODEL_UNAVAILABLE", error.message), requestId);
         }
+        if (error instanceof InvalidLocalChatPlanError) {
+          return errorResponse(new RequestError(502, "LOCAL_MODEL_INVALID_PLAN", error.message), requestId);
+        }
+        console.error("Chat dependency failure", {
+          requestId,
+          errorName: error instanceof Error ? error.name : typeof error,
+        });
         return json({ error: { code: "DEPENDENCY_UNAVAILABLE", message: "El servicio de chat no está disponible." }, requestId }, 503, requestId);
       }
     }, request.signal);
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
     if (error instanceof ChatTimeoutError) {
-      return json({ error: { code: "TIME_BUDGET_EXCEEDED", message: "La solicitud de chat excedió el presupuesto de 45 segundos." }, requestId }, 504, requestId);
+      return json({ error: { code: "TIME_BUDGET_EXCEEDED", message: "La solicitud de chat excedió el presupuesto de 90 segundos." }, requestId }, 504, requestId);
     }
     if (error instanceof ChatCancelledError) {
       return json({ error: { code: "REQUEST_CANCELLED", message: "La solicitud de chat fue cancelada." }, requestId }, 499, requestId);

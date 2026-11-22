@@ -1,6 +1,6 @@
 let activeChats = 0;
 const MAX_ACTIVE_CHATS = 2;
-const DEFAULT_CHAT_BUDGET_MS = 45_000;
+export const CHAT_REQUEST_BUDGET_MS = 90_000;
 
 export class ChatBusyError extends Error {
   constructor() {
@@ -41,7 +41,7 @@ function waitForAbortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> 
 export function runChatRequest<T>(
   task: (signal: AbortSignal) => Promise<T>,
   callerSignal?: AbortSignal,
-  budgetMs = DEFAULT_CHAT_BUDGET_MS,
+  budgetMs = CHAT_REQUEST_BUDGET_MS,
 ): Promise<T> {
   if (activeChats >= MAX_ACTIVE_CHATS) return Promise.reject(new ChatBusyError());
 

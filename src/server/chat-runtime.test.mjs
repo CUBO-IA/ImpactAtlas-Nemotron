@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  CHAT_REQUEST_BUDGET_MS,
   ChatBusyError,
   ChatTimeoutError,
   runChatRequest,
 } from "./chat-runtime.ts";
+import { LOCAL_CHAT_TIMEOUT_MS } from "../ai/provider.ts";
+
+test("el presupuesto global cubre el arranque frío y supera el timeout local del proveedor", () => {
+  assert.equal(CHAT_REQUEST_BUDGET_MS, 90_000);
+  assert.equal(LOCAL_CHAT_TIMEOUT_MS, 75_000);
+  assert.ok(LOCAL_CHAT_TIMEOUT_MS < CHAT_REQUEST_BUDGET_MS);
+});
 
 test("admits two concurrent chat requests and rejects the third as busy", async () => {
   let finish;

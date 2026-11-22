@@ -56,6 +56,13 @@ test("renderiza tablas deterministas con hechos permitidos y aplica filtros del 
   assert.deepEqual(result.blocks[0].evidenceIds, [result.evidence[0].id]);
 });
 
+test("un saludo solicita precisión sin llamar al modelo ni consultar datos", async () => {
+  const deps = dependencies();
+  const result = await createChatOrchestrator(deps)({ question: "hola", history: [] });
+  assert.equal(result.status, "needs_clarification");
+  assert.deepEqual(deps.calls, []);
+});
+
 test("ignora cifras y referencias inventadas en la clarificación del proveedor", async () => {
   const deps = dependencies({ plan: {
     status: "needs_clarification",
@@ -161,6 +168,18 @@ test("búsqueda semántica vacía se abstiene y nunca publica snippets de candid
   assert.equal(result.status, "insufficient_evidence");
   assert.deepEqual(result.evidence[0].facts, []);
   assert.match(result.blocks[0].text, /No hay evidencia publicable/);
+});
+
+test("búsqueda semántica deshabilitada se abstiene explicando la limitación", async () => {
+  const deps = dependencies({
+    plan: { status: "execute", calls: [{ name: "search_semantic_evidence", input: { text: "temas similares", topK: 5 } }] },
+  });
+  delete deps.services.searchSemanticEvidence;
+  const result = await createChatOrchestrator(deps)(request);
+  assert.equal(result.status, "insufficient_evidence");
+  assert.match(result.blocks[0].text, /búsqueda semántica está deshabilitada/i);
+  assert.deepEqual(result.evidence[0].facts, []);
+  assert.deepEqual(result.toolsUsed, ["search_semantic_evidence"]);
 });
 
 test("resultados semánticos jamás exponen texto recuperado ni lo convierten en prevalencia", async () => {
