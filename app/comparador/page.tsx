@@ -4,6 +4,8 @@ import React, { Suspense, useEffect, useState, useRef, useCallback } from "react
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import type { DepartmentId, Filters, MetricId } from "@/src/contracts/common";
 import type { CompareResponse } from "@/src/contracts/compare";
 import { DepartmentSelector } from "@/components/compare/department-selector";
@@ -204,71 +206,25 @@ function ComparadorContent() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="Logo ImpactAtlas"
-              width={140}
-              height={36}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </Link>
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-zinc-600 md:flex">
-            <Link
-              href="/explorador"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Explorador y Mapa
-            </Link>
-            <Link
-              href="/comparador"
-              className="text-[#002b7f] font-bold border-b-2 border-[#002b7f] py-5"
-            >
-              Comparador Departamental
-            </Link>
-            <Link
-              href="/chat"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Chat Asistente
-            </Link>
-            <Link
-              href="/reportes"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Reportes PDF
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/explorador"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
-            >
-              <BarChart3 className="size-3.5" />
-              Ver Mapa
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative font-sans">
+      {/* Futuristic Site Header */}
+      <SiteHeader />
 
       {/* Main Content Area */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      <main className="relative mx-auto w-full max-w-7xl flex-1 px-6 sm:px-8 py-8 space-y-6">
+        <div className="absolute inset-0 bg-tech-grid opacity-30 pointer-events-none" />
+
         {/* Title Header */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div className="relative flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-[#002b7f]">
-              <GitCompare className="size-3.5" />
-              Comparador Interdepartamental y Análisis de Brechas
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-orange-50/70 px-3.5 py-1 text-xs font-semibold text-[#ff6a00] shadow-2xs">
+              <GitCompare className="size-3.5 text-[#ff6a00]" />
+              <span className="font-mono text-[11px] tracking-wide uppercase">MATRIZ TERRITORIAL · ANÁLISIS DE BRECHAS</span>
             </div>
-            <h1 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
-              Análisis Territorial Comparativo
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">
+              Comparador Territorial de Brechas
             </h1>
-            <p className="mt-1 text-xs text-zinc-600 max-w-3xl">
+            <p className="mt-1 text-xs sm:text-sm text-zinc-600 max-w-3xl leading-relaxed">
               Contraste multidimensional entre departamentos con base de referencia dinámica. Las brechas se calculan en dólares ($ USD) y puntos porcentuales (pp), garantizando comparaciones rigurosas sin sesgos relativos.
             </p>
           </div>
@@ -388,25 +344,8 @@ function ComparadorContent() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="Logo ImpactAtlas"
-              width={100}
-              height={26}
-              className="h-6 w-auto object-contain opacity-80"
-            />
-            <span className="text-xs text-zinc-400">|</span>
-            <span className="text-xs text-zinc-500">ImpactAtlas — Plataforma de Inclusión Financiera</span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            El Salvador • Análisis Socioeconómico y Visualización con Inteligencia Artificial
-          </p>
-        </div>
-      </footer>
+      {/* Futuristic Site Footer */}
+      <SiteFooter />
     </div>
   );
 }

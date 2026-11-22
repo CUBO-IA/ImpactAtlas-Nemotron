@@ -13,6 +13,9 @@ import {
   ShieldCheck,
   BarChart3,
   Sparkles,
+  Cpu,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 
 interface ReportConfiguratorProps {
@@ -114,57 +117,62 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
         setSelectedSections(selectedSections.filter((item) => item !== id));
       }
     } else {
-      setSelectedSections([...selectedSections, id]);
+      if (selectedSections.length < 5) {
+        setSelectedSections([...selectedSections, id]);
+      }
     }
   }
 
   async function handleGeneratePdf() {
-    if (generating) return; // Prevent double submission (D1-13)
+    if (generating) return;
 
     setGenerating(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const payload = {
-        filters: Object.keys(filters).length > 0 ? filters : undefined,
-        indicators: selectedIndicators,
-        sections: selectedSections,
-      };
-
-      const res = await fetch("/api/reports/pdf", {
+      const response = await fetch("/api/reports/pdf", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Reporte de Inclusión Financiera e Impacto Socioeconómico",
+          filters: filters,
+          indicators: selectedIndicators,
+          sections: selectedSections,
+        }),
       });
 
-      // Verify that response is binary PDF and not a JSON error (D1-13)
-      const contentType = res.headers.get("Content-Type") ?? "";
+      const contentType = response.headers.get("content-type") || "";
 
-      if (!res.ok || !contentType.includes("application/pdf")) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message ?? "Error al generar el documento PDF.");
+      if (!response.ok || !contentType.includes("application/pdf")) {
+        const errorJson = await response.json().catch(() => null);
+        throw new Error(
+          errorJson?.error?.message ||
+            `Error al generar el PDF (${response.status}: ${response.statusText})`
+        );
       }
 
-      const blob = await res.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-
-      // Trigger automatic browser download
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `impactatlas-reporte-${new Date().toISOString().slice(0, 10)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      // Immediately revoke object URL (D1-13)
-      URL.revokeObjectURL(downloadUrl);
+      // Download PDF blob safely and revoke URL
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `reporte-impactatlas-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
 
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 6000);
     } catch (err: unknown) {
-      console.error("PDF download failed:", err);
-      setError(err instanceof Error ? err.message : "Error durante la generación del reporte.");
+      console.error("PDF generation failed:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error inesperado al procesar la exportación del PDF."
+      );
     } finally {
       setGenerating(false);
     }
@@ -172,21 +180,28 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
 
   return (
     <div className="space-y-6">
-      {/* Configuration Grid */}
+      {/* 2-Column Configuration Station */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Indicators Card */}
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-[#002b7f]" />
-              <h3 className="text-sm font-bold text-zinc-900">
-                Indicadores a Incluir ({selectedIndicators.length}/4)
-              </h3>
+        {/* Left Card: Indicators Selector */}
+        <div className="glass-surface hud-bracket rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-200/60 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex size-2 rounded-full bg-[#002b7f]" />
+                <h3 className="text-sm font-extrabold text-zinc-950">
+                  Indicadores Estadísticos
+                </h3>
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Selecciona entre 1 y 4 variables clave.
+              </p>
             </div>
-            <span className="text-[11px] text-zinc-400">Mínimo 1, Máximo 4</span>
+            <span className="font-mono text-xs font-bold text-[#002b7f] bg-blue-50/80 px-2.5 py-0.5 rounded-full border border-blue-200/80">
+              {selectedIndicators.length} / 4
+            </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {indicatorOptions.map((opt) => {
               const selected = selectedIndicators.includes(opt.id);
               return (
@@ -194,10 +209,10 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
                   key={opt.id}
                   type="button"
                   onClick={() => toggleIndicator(opt.id)}
-                  className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition-all border ${
+                  className={`flex w-full items-start gap-3 rounded-2xl p-3.5 text-left transition-all duration-200 border ${
                     selected
-                      ? "border-blue-200 bg-blue-50/40 text-zinc-900"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 text-zinc-600"
+                      ? "border-[#002b7f]/40 bg-blue-50/50 text-zinc-900 shadow-2xs"
+                      : "border-zinc-200/80 bg-white/70 hover:border-zinc-300 text-zinc-600"
                   }`}
                 >
                   <span className="mt-0.5 text-[#002b7f]">
@@ -208,7 +223,7 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
                     )}
                   </span>
                   <div>
-                    <div className="text-xs font-bold">{opt.label}</div>
+                    <div className="text-xs font-bold text-zinc-900">{opt.label}</div>
                     <div className="text-[11px] text-zinc-500 mt-0.5">{opt.desc}</div>
                   </div>
                 </button>
@@ -217,19 +232,26 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
           </div>
         </div>
 
-        {/* Sections Card */}
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-            <div className="flex items-center gap-2">
-              <FileText className="size-4 text-[#ff6a00]" />
-              <h3 className="text-sm font-bold text-zinc-900">
-                Secciones del Informe ({selectedSections.length}/5)
-              </h3>
+        {/* Right Card: Sections Selector */}
+        <div className="glass-surface hud-bracket rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-200/60 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex size-2 rounded-full bg-[#ff6a00]" />
+                <h3 className="text-sm font-extrabold text-zinc-950">
+                  Secciones del Informe
+                </h3>
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Selecciona entre 1 y 5 capítulos estructurados.
+              </p>
             </div>
-            <span className="text-[11px] text-zinc-400">Mínimo 1 sección</span>
+            <span className="font-mono text-xs font-bold text-[#ff6a00] bg-orange-50/80 px-2.5 py-0.5 rounded-full border border-orange-200/80">
+              {selectedSections.length} / 5
+            </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {sectionOptions.map((opt) => {
               const selected = selectedSections.includes(opt.id);
               return (
@@ -237,10 +259,10 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
                   key={opt.id}
                   type="button"
                   onClick={() => toggleSection(opt.id)}
-                  className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition-all border ${
+                  className={`flex w-full items-start gap-3 rounded-2xl p-3.5 text-left transition-all duration-200 border ${
                     selected
-                      ? "border-orange-200 bg-orange-50/30 text-zinc-900"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 text-zinc-600"
+                      ? "border-orange-300 bg-orange-50/40 text-zinc-900 shadow-2xs"
+                      : "border-zinc-200/80 bg-white/70 hover:border-zinc-300 text-zinc-600"
                   }`}
                 >
                   <span className="mt-0.5 text-[#ff6a00]">
@@ -251,7 +273,7 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
                     )}
                   </span>
                   <div>
-                    <div className="text-xs font-bold">{opt.label}</div>
+                    <div className="text-xs font-bold text-zinc-900">{opt.label}</div>
                     <div className="text-[11px] text-zinc-500 mt-0.5">{opt.desc}</div>
                   </div>
                 </button>
@@ -261,20 +283,20 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
         </div>
       </div>
 
-      {/* Mandatory Inclusions Notice (D1-13: Fuentes y limitaciones no son opcionales) */}
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 flex items-start gap-3">
+      {/* Mandatory Inclusions Notice */}
+      <div className="glass-surface rounded-3xl p-5 text-xs text-zinc-600 flex items-start gap-3.5 shadow-2xs">
         <ShieldCheck className="size-5 shrink-0 text-[#002b7f] mt-0.5" />
         <div className="space-y-1">
-          <span className="font-bold text-zinc-900">Inclusiones Obligatorias del Sistema:</span>
+          <span className="font-bold text-zinc-900">Inclusiones Institucionales Automáticas:</span>
           <p className="text-[11px] leading-relaxed text-zinc-500">
-            Cada informe emitido incorpora de manera automática y no modificable: fecha y hora de emisión, identificador criptográfico de petición, fuentes cartográficas (CNR), notas metodológicas de la muestra y advertencia explícita de supresión de privacidad ($n &lt; 5$).
+            Cada informe emitido incorpora de manera obligatoria y no modificable: fecha y hora de emisión ISO, identificador criptográfico de petición (`requestId`), fuentes cartográficas (CNR), notas metodológicas de la cohorte y advertencia explícita de supresión de privacidad ($n &lt; 5$).
           </p>
         </div>
       </div>
 
       {/* Error alert */}
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-900 flex items-start gap-3">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-xs text-rose-900 flex items-start gap-3 shadow-2xs">
           <AlertTriangle className="size-5 shrink-0 text-rose-600 mt-0.5" />
           <div className="space-y-1">
             <span className="font-bold">Fallo en la generación:</span>
@@ -285,19 +307,19 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
 
       {/* Success alert */}
       {success && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900 flex items-center gap-3">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-xs text-emerald-900 flex items-center gap-3 shadow-2xs animate-in fade-in duration-300">
           <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
-          <span>¡Reporte generado y descargado exitosamente! Revisa tu carpeta de descargas.</span>
+          <span className="font-medium">¡Reporte generado y descargado exitosamente en PDF! Revisa tu bandeja de descargas.</span>
         </div>
       )}
 
       {/* Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-3xl border border-zinc-200 bg-white p-5 shadow-xs">
+      <div className="glass-surface hud-bracket flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-3xl p-6 shadow-sm">
         <div>
           <div className="text-xs font-bold text-zinc-900">
-            Listo para generar: {selectedSections.length} sección{selectedSections.length > 1 ? "es" : ""}, {selectedIndicators.length} indicador{selectedIndicators.length > 1 ? "es" : ""}
+            Listo para compilar: {selectedSections.length} sección{selectedSections.length > 1 ? "es" : ""}, {selectedIndicators.length} indicador{selectedIndicators.length > 1 ? "es" : ""}
           </div>
-          <div className="text-[11px] text-zinc-500">
+          <div className="text-[11px] text-zinc-500 mt-0.5">
             El archivo se procesa en el servidor con motor Chromium headless y gráficos vectoriales SVG.
           </div>
         </div>
@@ -306,16 +328,16 @@ export function ReportConfigurator({ filters }: ReportConfiguratorProps) {
           type="button"
           disabled={generating}
           onClick={handleGeneratePdf}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#002b7f] px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-[#002060] transition-all disabled:opacity-50 shrink-0"
+          className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#002b7f] to-[#001d54] px-7 py-3 text-xs font-bold text-white shadow-md shadow-[#002b7f]/20 hover:shadow-lg hover:shadow-[#002b7f]/30 transition-all duration-200 disabled:opacity-50 shrink-0 hover:scale-[1.02] active:scale-[0.98]"
         >
           {generating ? (
             <>
-              <Loader2 className="size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin text-orange-400" />
               <span>Generando PDF en Servidor...</span>
             </>
           ) : (
             <>
-              <Download className="size-4" />
+              <Download className="size-4 text-orange-400 transition-transform duration-200 group-hover:translate-y-0.5" />
               <span>Generar y Descargar Reporte PDF</span>
             </>
           )}

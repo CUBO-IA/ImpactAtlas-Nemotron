@@ -4,6 +4,8 @@ import React, { Suspense, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import type { Filters } from "@/src/contracts/common";
 import type { ChatResponse } from "@/src/contracts/chat";
 import { ChatMessageList, type Message } from "@/components/chat/chat-message-list";
@@ -168,62 +170,48 @@ function ChatContent() {
     (filters.goalIds?.length ?? 0);
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 text-zinc-900 flex flex-col font-sans">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="Logo ImpactAtlas"
-              width={140}
-              height={36}
-              className="h-8 w-auto object-contain"
-              priority
-            />
-          </Link>
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-zinc-600 md:flex">
-            <Link href="/explorador" className="transition-colors hover:text-[#002b7f]">
-              Explorador y Mapa
-            </Link>
-            <Link href="/comparador" className="transition-colors hover:text-[#002b7f]">
-              Comparador Departamental
-            </Link>
-            <Link
-              href="/chat"
-              className="text-[#002b7f] font-bold border-b-2 border-[#002b7f] py-5"
-            >
-              Chat Asistente IA
-            </Link>
-            <Link href="/reportes" className="transition-colors hover:text-[#002b7f]">
-              Reportes PDF
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
-                activeFiltersCount > 0
-                  ? "border-[#002b7f] bg-blue-50 text-[#002b7f]"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100"
-              }`}
-            >
-              <SlidersHorizontal className="size-3.5" />
-              <span>Filtros de Contexto</span>
-              {activeFiltersCount > 0 && (
-                <span className="size-4 rounded-full bg-[#002b7f] text-[10px] text-white flex items-center justify-center font-bold">
-                  {activeFiltersCount}
-                </span>
-              )}
-              {showFilters ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative font-sans">
+      {/* Futuristic Site Header */}
+      <SiteHeader />
 
       {/* Main Container */}
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 space-y-6">
+      <main className="relative mx-auto w-full max-w-4xl flex-1 px-6 sm:px-8 py-8 space-y-6">
+        <div className="absolute inset-0 bg-tech-dots opacity-30 pointer-events-none" />
+
+        {/* Title Header with Context Filter Toggle */}
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/60 pb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/70 px-3.5 py-1 text-xs font-semibold text-[#002b7f] mb-1.5 shadow-2xs">
+              <Sparkles className="size-3.5 text-[#ff6a00]" />
+              <span className="font-mono text-[11px] tracking-wide uppercase">ASISTENTE ANALÍTICO NEURAL · PGVECTOR 768D</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
+              Chat & Consultas Estadísticas
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-600 mt-1 max-w-xl leading-relaxed">
+              Realiza preguntas en lenguaje natural sobre inclusión financiera, ingresos y metas socioeconómicas con trazabilidad total de hechos.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-semibold transition-all shadow-2xs self-start sm:self-auto ${
+              activeFiltersCount > 0
+                ? "border-[#002b7f] bg-blue-50/80 text-[#002b7f]"
+                : "border-zinc-200/80 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+            }`}
+          >
+            <SlidersHorizontal className="size-3.5 text-[#ff6a00]" />
+            <span>Filtros de Contexto</span>
+            {activeFiltersCount > 0 && (
+              <span className="size-4 rounded-full bg-[#002b7f] text-[10px] text-white flex items-center justify-center font-bold">
+                {activeFiltersCount}
+              </span>
+            )}
+            {showFilters ? <ChevronUp className="size-3.5 text-zinc-400" /> : <ChevronDown className="size-3.5 text-zinc-400" />}
+          </button>
+        </div>
         {/* Context Filters Collapsible Drawer */}
         {showFilters && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-200">
@@ -275,18 +263,8 @@ function ChatContent() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-4 mt-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-zinc-900">ImpactAtlas</span>
-            <span>• Asistente con evidencia controlada</span>
-          </div>
-          <p className="text-[11px] text-zinc-400">
-            Cifras verificadas directamente en PostgreSQL. Sin alucinación de datos estadísticos.
-          </p>
-        </div>
-      </footer>
+      {/* Futuristic Site Footer */}
+      <SiteFooter />
     </div>
   );
 }

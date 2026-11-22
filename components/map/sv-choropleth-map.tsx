@@ -8,6 +8,7 @@ import {
   type DeptMapPath,
 } from "@/src/lib/sv-map-paths";
 import type { DepartmentId, MetricValue } from "@/src/contracts/common";
+import { Compass, Layers, Sparkles, Crosshair } from "lucide-react";
 
 export type ActiveMapMetric = "financial_exclusion_pct" | "income_mean" | "sample_count";
 
@@ -47,10 +48,10 @@ export function SvChoroplethMap({
     const metricObj = metrics?.[activeMetric];
 
     if (!metricObj || metricObj.value === null) {
-      return "#f3f4f6"; // Gray-100 for empty / no data
+      return "#f1f5f9"; // Slate-100 for empty / no data
     }
     if (metricObj.suppressed) {
-      return "#e5e7eb"; // Gray-200 for suppressed
+      return "#e2e8f0"; // Slate-200 for suppressed
     }
 
     const val = metricObj.value;
@@ -58,22 +59,22 @@ export function SvChoroplethMap({
 
     if (activeMetric === "financial_exclusion_pct") {
       // Warm orange to deep amber/vermilion
-      if (ratio < 0.25) return "#fed7aa"; // orange-200
-      if (ratio < 0.5) return "#fb923c"; // orange-400
+      if (ratio < 0.25) return "#ffedd5"; // orange-100
+      if (ratio < 0.5) return "#fdba74"; // orange-300
       if (ratio < 0.75) return "#ea580c"; // orange-600
       return "#9a3412"; // orange-800
     } else if (activeMetric === "income_mean") {
-      // Light blue to deep navy
-      if (ratio < 0.25) return "#bfdbfe"; // blue-200
+      // Light cyan-blue to deep imperial navy
+      if (ratio < 0.25) return "#dbeafe"; // blue-100
       if (ratio < 0.5) return "#60a5fa"; // blue-400
       if (ratio < 0.75) return "#2563eb"; // blue-600
       return "#1e3a8a"; // blue-900
     } else {
-      // Indigo to purple
-      if (ratio < 0.25) return "#e0e7ff"; // indigo-100
-      if (ratio < 0.5) return "#818cf8"; // indigo-400
-      if (ratio < 0.75) return "#4f46e5"; // indigo-600
-      return "#312e81"; // indigo-900
+      // Indigo to violet
+      if (ratio < 0.25) return "#ede9fe"; // violet-100
+      if (ratio < 0.5) return "#a78bfa"; // violet-400
+      if (ratio < 0.75) return "#7c3aed"; // violet-600
+      return "#4c1d95"; // violet-900
     }
   }
 
@@ -84,36 +85,47 @@ export function SvChoroplethMap({
     return `${val.toLocaleString()} perfiles`;
   }
 
+  const selectedDeptObj = SV_DEPARTMENT_PATHS.find((d) => d.id === selectedDepartment);
+
   return (
-    <div className="relative rounded-3xl border border-zinc-200 bg-white p-6 shadow-xs flex flex-col">
-      {/* Map Header with Metric Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
+    <div className="glass-surface hud-bracket relative rounded-3xl p-6 sm:p-7 flex flex-col transition-all duration-300 shadow-sm">
+      {/* Map Header with Telemetry & Metric Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200/60">
         <div>
-          <h2 className="text-base font-bold text-zinc-950">Mapa de El Salvador (14 Departamentos)</h2>
-          <p className="text-xs text-zinc-500">
-            Haz clic en un departamento para filtrar el análisis o inspeccionar sus métricas.
+          <div className="flex items-center gap-2 mb-1">
+            <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              GIS Vectorial · EPSG:4326 · 14 Departamentos
+            </span>
+          </div>
+          <h2 className="text-base font-extrabold text-zinc-950 flex items-center gap-2">
+            Cartografía Coroplética Interactiva
+          </h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Selecciona un territorio para activar el visor estadístico o haz clic para alternar.
           </p>
         </div>
 
-        <div className="inline-flex rounded-xl bg-zinc-100 p-1 text-xs font-medium text-zinc-600">
+        {/* Metric Selector Buttons */}
+        <div className="inline-flex rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-1 text-xs font-semibold text-zinc-600 shadow-2xs">
           <button
             type="button"
             onClick={() => onChangeMetric("financial_exclusion_pct")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeMetric === "financial_exclusion_pct"
-                ? "bg-white font-semibold text-[#ff6a00] shadow-xs"
-                : "hover:text-zinc-900"
+                ? "bg-white font-bold text-[#ff6a00] shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
-            Exclusión Financiera (%)
+            Exclusión (%)
           </button>
           <button
             type="button"
             onClick={() => onChangeMetric("income_mean")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeMetric === "income_mean"
-                ? "bg-white font-semibold text-[#002b7f] shadow-xs"
-                : "hover:text-zinc-900"
+                ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
             Ingreso Promedio ($)
@@ -121,10 +133,10 @@ export function SvChoroplethMap({
           <button
             type="button"
             onClick={() => onChangeMetric("sample_count")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
               activeMetric === "sample_count"
-                ? "bg-white font-semibold text-zinc-900 shadow-xs"
-                : "hover:text-zinc-900"
+                ? "bg-white font-bold text-violet-700 shadow-xs ring-1 ring-zinc-950/5"
+                : "hover:text-zinc-950 hover:bg-white/50"
             }`}
           >
             Muestra (n)
@@ -132,9 +144,9 @@ export function SvChoroplethMap({
         </div>
       </div>
 
-      {/* Map SVG Canvas */}
+      {/* Map SVG Canvas with Ambient Backdrop */}
       <div
-        className="relative my-4 flex-1 flex items-center justify-center overflow-hidden min-h-[360px]"
+        className="relative my-4 flex-1 flex items-center justify-center overflow-hidden min-h-[380px] rounded-2xl bg-gradient-to-b from-blue-50/20 via-zinc-50/30 to-zinc-50/10 border border-zinc-200/50"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -144,9 +156,12 @@ export function SvChoroplethMap({
           setTooltipPos(null);
         }}
       >
+        {/* Subtle Map Grid lines */}
+        <div className="absolute inset-0 bg-tech-dots opacity-40 pointer-events-none" />
+
         <svg
           viewBox={`0 0 ${SV_MAP_WIDTH} ${SV_MAP_HEIGHT}`}
-          className="h-full w-full max-h-[460px] select-none transition-all drop-shadow-xs"
+          className="relative z-10 h-full w-full max-h-[460px] select-none transition-all"
           role="img"
           aria-label="Mapa coroplético interactivo de El Salvador"
         >
@@ -156,14 +171,22 @@ export function SvChoroplethMap({
             const fillColor = getColor(dept.id);
 
             return (
-              <g key={dept.id} className="cursor-pointer">
+              <g key={dept.id} className="cursor-pointer group">
                 <path
                   d={dept.d}
                   fill={fillColor}
                   stroke={isSelected ? "#002b7f" : isHovered ? "#ff6a00" : "#ffffff"}
                   strokeWidth={isSelected ? 3.5 : isHovered ? 2.5 : 1.2}
                   strokeLinejoin="round"
-                  className="transition-all duration-150 focus:outline-none"
+                  style={{
+                    filter: isSelected
+                      ? "drop-shadow(0 6px 16px rgba(0, 43, 127, 0.4))"
+                      : isHovered
+                      ? "drop-shadow(0 4px 12px rgba(255, 106, 0, 0.35))"
+                      : "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))",
+                    transition: "fill 0.3s ease, stroke 0.2s ease, filter 0.2s ease",
+                  }}
+                  className="focus:outline-none"
                   tabIndex={0}
                   role="button"
                   aria-pressed={isSelected}
@@ -179,94 +202,126 @@ export function SvChoroplethMap({
                     }
                   }}
                 />
-                {/* Center dot / Label */}
-                <circle
-                  cx={dept.cx}
-                  cy={dept.cy}
-                  r={isSelected ? 3.5 : 2}
-                  fill={isSelected ? "#002b7f" : "#ffffff"}
-                  stroke="#333333"
-                  strokeWidth={0.8}
-                  className="pointer-events-none opacity-80"
-                />
+                
+                {/* Center dot / centroid radar ping */}
+                {isSelected ? (
+                  <g className="pointer-events-none">
+                    <circle
+                      cx={dept.cx}
+                      cy={dept.cy}
+                      r={7}
+                      fill="none"
+                      stroke="#002b7f"
+                      strokeWidth={1.5}
+                      className="animate-ping opacity-75"
+                    />
+                    <circle
+                      cx={dept.cx}
+                      cy={dept.cy}
+                      r={3.5}
+                      fill="#002b7f"
+                      stroke="#ffffff"
+                      strokeWidth={1.2}
+                    />
+                  </g>
+                ) : (
+                  <circle
+                    cx={dept.cx}
+                    cy={dept.cy}
+                    r={isHovered ? 2.8 : 2}
+                    fill={isHovered ? "#ff6a00" : "#ffffff"}
+                    stroke="#475569"
+                    strokeWidth={0.8}
+                    className="pointer-events-none opacity-80 transition-all duration-200"
+                  />
+                )}
               </g>
             );
           })}
         </svg>
 
-        {/* Hover Tooltip */}
+        {/* Futuristic Glassmorphic Hover Tooltip */}
         {hoveredDept && tooltipPos && (
           <div
-            className="pointer-events-none absolute z-30 rounded-xl bg-zinc-950/90 px-3.5 py-2 text-xs text-white shadow-xl backdrop-blur-xs transition-transform transform -translate-x-1/2 -translate-y-full mb-2"
-            style={{ left: tooltipPos.x, top: tooltipPos.y - 12 }}
+            className="pointer-events-none absolute z-30 rounded-2xl bg-zinc-950/90 border border-white/20 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md transition-transform transform -translate-x-1/2 -translate-y-full mb-3 min-w-[190px]"
+            style={{ left: tooltipPos.x, top: tooltipPos.y - 14 }}
           >
-            <div className="font-bold text-sm text-zinc-100">{hoveredDept.name}</div>
-            <div className="mt-1 flex items-center gap-1.5 text-zinc-300">
-              <span className="font-semibold text-orange-400">
+            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5 mb-2">
+              <span className="font-extrabold text-sm text-zinc-100">{hoveredDept.name}</span>
+              <span className="font-mono text-[10px] text-zinc-400 uppercase">DEPTO</span>
+            </div>
+            
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className="text-zinc-400">
                 {activeMetric === "financial_exclusion_pct"
-                  ? "Exclusión Financiera:"
+                  ? "Exclusión:"
                   : activeMetric === "income_mean"
                   ? "Ingreso Promedio:"
                   : "Muestra:"}
               </span>
-              <span>{formatValue(data.get(hoveredDept.id)?.[activeMetric]?.value)}</span>
+              <span className="font-mono font-bold text-orange-400">
+                {formatValue(data.get(hoveredDept.id)?.[activeMetric]?.value)}
+              </span>
             </div>
-            <div className="text-[10px] text-zinc-400 mt-1">
-              {selectedDepartment === hoveredDept.id ? "Clic para deseleccionar" : "Clic para ver detalle"}
+
+            <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400">
+              <span>{selectedDepartment === hoveredDept.id ? "Clic para deseleccionar" : "Clic para ver detalle"}</span>
+              <Crosshair className="size-3 text-zinc-500" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Map Legend & Selected Department Footer */}
-      <div className="mt-auto pt-4 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-zinc-500 font-medium">Escala:</span>
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] text-zinc-400">{minVal.toFixed(0)}</span>
-            <div className="flex h-3 w-28 overflow-hidden rounded-md border border-zinc-200">
+      {/* Map Legend & Active Department Footer */}
+      <div className="mt-auto pt-4 border-t border-zinc-200/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="font-mono text-zinc-500 font-semibold text-[11px] uppercase tracking-wider">Escala:</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] font-bold text-zinc-600">{minVal.toFixed(0)}</span>
+            <div className="flex h-3 w-32 overflow-hidden rounded-md border border-zinc-300/80 shadow-2xs">
               {activeMetric === "financial_exclusion_pct" ? (
                 <>
-                  <div className="flex-1 bg-[#fed7aa]" />
-                  <div className="flex-1 bg-[#fb923c]" />
+                  <div className="flex-1 bg-[#ffedd5]" />
+                  <div className="flex-1 bg-[#fdba74]" />
                   <div className="flex-1 bg-[#ea580c]" />
                   <div className="flex-1 bg-[#9a3412]" />
                 </>
               ) : activeMetric === "income_mean" ? (
                 <>
-                  <div className="flex-1 bg-[#bfdbfe]" />
+                  <div className="flex-1 bg-[#dbeafe]" />
                   <div className="flex-1 bg-[#60a5fa]" />
                   <div className="flex-1 bg-[#2563eb]" />
                   <div className="flex-1 bg-[#1e3a8a]" />
                 </>
               ) : (
                 <>
-                  <div className="flex-1 bg-[#e0e7ff]" />
-                  <div className="flex-1 bg-[#818cf8]" />
-                  <div className="flex-1 bg-[#4f46e5]" />
-                  <div className="flex-1 bg-[#312e81]" />
+                  <div className="flex-1 bg-[#ede9fe]" />
+                  <div className="flex-1 bg-[#a78bfa]" />
+                  <div className="flex-1 bg-[#7c3aed]" />
+                  <div className="flex-1 bg-[#4c1d95]" />
                 </>
               )}
             </div>
-            <span className="text-[10px] text-zinc-400">{maxVal.toFixed(0)}</span>
+            <span className="font-mono text-[11px] font-bold text-zinc-600">{maxVal.toFixed(0)}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {selectedDepartment ? (
-            <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1 text-xs font-semibold text-[#002b7f]">
-              <span>Departamento: {SV_DEPARTMENT_PATHS.find((d) => d.id === selectedDepartment)?.name}</span>
+          {selectedDeptObj ? (
+            <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50/90 border border-blue-200/80 px-3 py-1.5 text-xs font-semibold text-[#002b7f] shadow-2xs">
+              <span className="flex size-1.5 rounded-full bg-[#002b7f]" />
+              <span>{selectedDeptObj.name}</span>
               <button
                 type="button"
                 onClick={() => onSelectDepartment(null)}
-                className="ml-1 text-[#ff6a00] hover:underline"
+                className="ml-1 text-[#ff6a00] font-bold hover:underline"
               >
-                (Ver Todos)
+                (Restablecer Todos)
               </button>
             </div>
           ) : (
-            <span className="text-zinc-500 text-xs">
-              Mostrando los 14 departamentos (Nivel Nacional)
+            <span className="font-mono text-zinc-500 text-[11px]">
+              VISTA GLOBAL · 14 DEPARTAMENTOS
             </span>
           )}
         </div>

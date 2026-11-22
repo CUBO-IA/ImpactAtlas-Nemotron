@@ -1,199 +1,183 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SiteHeader } from "@/components/navigation/site-header";
+import { SiteFooter } from "@/components/navigation/site-footer";
 import {
-  BarChart3,
-  Bot,
-  Database,
-  FileText,
+  Compass,
   GitCompare,
-  LineChart,
-  MapPin,
-  Sparkles,
+  Bot,
+  FileText,
+  BarChart3,
+  Database,
+  ShieldCheck,
   TrendingUp,
   Users,
-  Wallet,
+  MapPin,
+  Cpu,
+  Sparkles,
   ArrowRight,
+  ChevronRight,
+  Layers,
+  Activity,
 } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-orange-500 selection:text-white">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-6 sm:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="ImpactAtlas Logo"
-              width={160}
-              height={53}
-              priority
-              className="h-10 w-auto object-contain"
-            />
-          </Link>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-zinc-600 md:flex">
-            <Link
-              href="/explorador"
-              className="text-[#002b7f] font-semibold transition-colors hover:text-[#002060]"
-            >
-              Explorador y Mapa
-            </Link>
-            <Link
-              href="/comparador"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Comparador
-            </Link>
-            <Link
-              href="/chat"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Asistente IA
-            </Link>
-            <Link
-              href="/reportes"
-              className="transition-colors hover:text-[#002b7f]"
-            >
-              Reportes PDF
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/explorador"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#002b7f] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#002060]"
-            >
-              <LineChart className="size-3.5" />
-              Abrir Explorador
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-white text-zinc-900 selection:bg-[#ff6a00] selection:text-white relative overflow-x-hidden">
+      {/* Futuristic Navigation */}
+      <SiteHeader />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden border-b border-zinc-100 bg-gradient-to-b from-blue-50/50 via-white to-white py-20 sm:py-28">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,theme(colors.blue.100),white)] opacity-40" />
-          <div className="mx-auto max-w-7xl px-6 text-center sm:px-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/70 px-4 py-1.5 text-xs font-semibold text-[#002b7f] mb-8">
-              <Sparkles className="size-3.5 text-orange-500" />
-              <span>Plataforma de Análisis e Inclusión Financiera — El Salvador</span>
+        {/* Hero Section with Ambient Glow and Cyber Grid */}
+        <section className="relative overflow-hidden border-b border-zinc-200/70 bg-gradient-to-b from-blue-50/40 via-white to-zinc-50/50 py-24 sm:py-32">
+          {/* Subtle Ambient Glowing Orbs */}
+          <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-[#002b7f]/15 to-[#ff6a00]/15 blur-3xl opacity-60 rounded-full" />
+          <div className="pointer-events-none absolute top-1/2 -right-32 w-96 h-96 bg-[#ff6a00]/10 blur-3xl rounded-full" />
+          <div className="pointer-events-none absolute top-1/3 -left-32 w-96 h-96 bg-[#002b7f]/10 blur-3xl rounded-full" />
+          
+          {/* Tech Grid Background Pattern */}
+          <div className="absolute inset-0 bg-tech-grid opacity-60 pointer-events-none" />
+
+          <div className="relative mx-auto max-w-7xl px-6 text-center sm:px-8">
+            {/* Telemetry Status Badge */}
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-blue-200/70 bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-[#002b7f] shadow-xs mb-8 animate-float-slow">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff6a00] opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-[#ff6a00]" />
+              </span>
+              <span className="font-mono uppercase tracking-wider text-[11px] text-zinc-700">
+                Inteligencia Geoespacial & Analítica Vectorial · El Salvador
+              </span>
             </div>
 
-            <div className="mx-auto flex justify-center mb-6">
-              <Image
-                src="/images/logo.png"
-                alt="ImpactAtlas"
-                width={360}
-                height={120}
-                priority
-                className="h-16 sm:h-20 w-auto object-contain drop-shadow-sm"
-              />
+            {/* Platform Brand Hero Display */}
+            <div className="mx-auto flex justify-center mb-8">
+              <div className="relative p-2 rounded-3xl bg-white/60 backdrop-blur-lg border border-zinc-200/60 shadow-[0_8px_30px_rgb(0,43,127,0.08)]">
+                <Image
+                  src="/images/logo.png"
+                  alt="ImpactAtlas"
+                  width={380}
+                  height={125}
+                  priority
+                  className="h-16 sm:h-20 w-auto object-contain drop-shadow-sm"
+                />
+              </div>
             </div>
 
             <h1 className="mx-auto max-w-4xl text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl sm:leading-tight">
               Mapeando las metas socioeconómicas y la{" "}
-              <span className="text-[#ff6a00]">inclusión financiera</span> con IA
+              <span className="futuristic-gradient-text">inclusión financiera</span> con IA
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-600 sm:text-xl">
-              Explora patrones demográficos, brechas de acceso bancario y aspiraciones
-              de la población salvadoreña a través de visualizaciones interactivas, comparativas territoriales y búsqueda semántica con vectores.
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
+              Explora patrones demográficos, brechas territoriales y aspiraciones
+              de la población salvadoreña a través de cartografía coroplética interactiva, comparativas de precisión y búsqueda semántica con vectores de 768 dimensiones.
             </p>
 
+            {/* Action Buttons with Micro-interactions */}
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/explorador"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#002b7f] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#002060] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b7f]"
+                className="group relative inline-flex h-12 items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-[#002b7f] to-[#001d54] px-7 text-sm font-semibold text-white shadow-md shadow-[#002b7f]/20 transition-all duration-300 hover:shadow-lg hover:shadow-[#002b7f]/30 hover:scale-[1.02] active:scale-[0.98]"
               >
-                <LineChart className="size-4" />
-                Abrir Explorador y Mapa
+                <Compass className="size-4 text-orange-400 transition-transform duration-300 group-hover:rotate-45" />
+                <span>Abrir Explorador y Mapa</span>
+                <ArrowRight className="size-4 text-zinc-300 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/chat"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50"
+                className="group inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border border-zinc-300/80 bg-white/90 backdrop-blur-md px-7 text-sm font-semibold text-zinc-800 shadow-xs transition-all duration-200 hover:border-[#002b7f]/40 hover:bg-zinc-50 hover:text-[#002b7f] hover:shadow-sm"
               >
-                <Bot className="size-4 text-[#ff6a00]" />
-                Consultar Asistente IA
+                <Bot className="size-4 text-[#ff6a00] transition-transform duration-200 group-hover:scale-110" />
+                <span>Consultar Asistente IA</span>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Quick Stats Grid */}
-        <section className="border-b border-zinc-200 bg-zinc-50/60 py-12">
-          <div className="mx-auto max-w-7xl px-6 sm:px-8">
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs">
-                <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f]">
+        {/* High-Tech Telemetry Stats Grid */}
+        <section className="relative border-b border-zinc-200/80 bg-zinc-50/70 py-12">
+          <div className="absolute inset-0 bg-tech-dots opacity-30 pointer-events-none" />
+          <div className="relative mx-auto max-w-7xl px-6 sm:px-8">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
+              <div className="glass-card-interactive hud-bracket rounded-2xl p-6 text-center">
+                <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] shadow-2xs">
                   <Users className="size-5" />
                 </div>
-                <div className="text-3xl font-bold tracking-tight text-zinc-950">50,000</div>
-                <div className="mt-1 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">50,000</div>
+                <div className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
                   Perfiles Analizados
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs">
-                <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00]">
+              <div className="glass-card-interactive hud-bracket rounded-2xl p-6 text-center">
+                <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] shadow-2xs">
                   <MapPin className="size-5" />
                 </div>
-                <div className="text-3xl font-bold tracking-tight text-zinc-950">14</div>
-                <div className="mt-1 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">14</div>
+                <div className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
                   Departamentos Cubiertos
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs">
-                <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f]">
+              <div className="glass-card-interactive hud-bracket rounded-2xl p-6 text-center">
+                <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] shadow-2xs">
                   <Database className="size-5" />
                 </div>
-                <div className="text-3xl font-bold tracking-tight text-zinc-950">768</div>
-                <div className="mt-1 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">768</div>
+                <div className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
                   Dimensiones Vectoriales
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 text-center shadow-xs">
-                <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00]">
-                  <Wallet className="size-5" />
+              <div className="glass-card-interactive hud-bracket rounded-2xl p-6 text-center">
+                <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] shadow-2xs">
+                  <Cpu className="size-5" />
                 </div>
-                <div className="text-3xl font-bold tracking-tight text-zinc-950">pgvector</div>
-                <div className="mt-1 text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  Búsqueda Semántica
+                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">pgvector</div>
+                <div className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
+                  Indexación Semántica
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 4 Core Features / MVP Modules */}
-        <section className="py-20 sm:py-24">
+        {/* 4 Core Features / Futuristic Modules Grid */}
+        <section className="relative py-20 sm:py-28 bg-white overflow-hidden">
           <div className="mx-auto max-w-7xl px-6 sm:px-8">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-14">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#ff6a00]">
-                  Capacidades de la Plataforma
-                </span>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+                <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-widest text-[#ff6a00] mb-2">
+                  <Layers className="size-3.5" />
+                  <span>Capacidades de la Plataforma</span>
+                </div>
+                <h2 className="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-4xl">
                   Las Cuatro Áreas de ImpactAtlas
                 </h2>
               </div>
-              <p className="mt-4 max-w-md text-sm text-zinc-600 md:mt-0">
-                Diseñadas para explorar con rigor estadístico y responder con precisión a preguntas de política pública e inclusión social.
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-600 md:mt-0">
+                Diseñadas para explorar con rigor estadístico y responder con precisión a preguntas estratégicas de política pública e inclusión social.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-              {/* Function 1: Explorador */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {/* Module 1: Explorador */}
               <Link
                 href="/explorador"
-                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+                className="group glass-card-interactive rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden"
               >
+                <div className="h-1 w-full bg-gradient-to-r from-[#002b7f] to-blue-400 absolute top-0 left-0" />
                 <div>
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] transition-transform group-hover:scale-105">
-                    <BarChart3 className="size-6" />
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] shadow-2xs transition-transform duration-300 group-hover:scale-110">
+                    <Compass className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
-                    1. Explorador y Mapa
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-[#002b7f]">F-01</span>
+                    <span className="text-xs text-zinc-400">·</span>
+                    <span className="text-xs font-medium text-zinc-500">Cartografía GIS</span>
+                  </div>
+                  <h3 className="mt-1 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
+                    Explorador y Mapa
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
                     Mapeo coroplético interactivo de los 14 departamentos. Filtros por ingresos, educación y ocupación con panel de distribuciones y estadísticas en tiempo real.
@@ -205,20 +189,26 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Function 2: Comparador */}
+              {/* Module 2: Comparador */}
               <Link
                 href="/comparador"
-                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-400 hover:shadow-md flex flex-col justify-between"
+                className="group glass-card-interactive rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden"
               >
+                <div className="h-1 w-full bg-gradient-to-r from-[#ff6a00] to-amber-400 absolute top-0 left-0" />
                 <div>
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] transition-transform group-hover:scale-105">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] shadow-2xs transition-transform duration-300 group-hover:scale-110">
                     <GitCompare className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#ff6a00] transition-colors">
-                    2. Comparador
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-[#ff6a00]">F-02</span>
+                    <span className="text-xs text-zinc-400">·</span>
+                    <span className="text-xs font-medium text-zinc-500">Matriz Territorial</span>
+                  </div>
+                  <h3 className="mt-1 text-lg font-bold text-zinc-950 group-hover:text-[#ff6a00] transition-colors">
+                    Comparador
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Comparación simultánea de 2 a 14 departamentos con un territorio de referencia. Tablas y gráficos de brechas en ingresos y exclusión financiera.
+                    Comparación simultánea de 2 a 14 departamentos con territorio de referencia. Tablas de brechas en ingresos y exclusión en puntos porcentuales exactos.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#ff6a00]">
@@ -227,20 +217,26 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Function 3: Chat */}
+              {/* Module 3: Chat */}
               <Link
                 href="/chat"
-                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+                className="group glass-card-interactive rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden"
               >
+                <div className="h-1 w-full bg-gradient-to-r from-[#002b7f] to-indigo-500 absolute top-0 left-0" />
                 <div>
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] transition-transform group-hover:scale-105">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] shadow-2xs transition-transform duration-300 group-hover:scale-110">
                     <Bot className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
-                    3. Chat & Asistente IA
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-[#002b7f]">F-03</span>
+                    <span className="text-xs text-zinc-400">·</span>
+                    <span className="text-xs font-medium text-zinc-500">Asistente Neural</span>
+                  </div>
+                  <h3 className="mt-1 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
+                    Chat & Asistente IA
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Consultas conversacionales en español con herramientas SQL controladas y búsqueda semántica de metas en vectores de 768 dimensiones.
+                    Consultas conversacionales con herramientas SQL controladas, visualización de tablas y gráficos, y búsqueda semántica de testimonios sobre pgvector.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">
@@ -249,20 +245,26 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Function 4: Reportes */}
+              {/* Module 4: Reportes */}
               <Link
                 href="/reportes"
-                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-400 hover:shadow-md flex flex-col justify-between"
+                className="group glass-card-interactive rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden"
               >
+                <div className="h-1 w-full bg-gradient-to-r from-[#ff6a00] to-rose-400 absolute top-0 left-0" />
                 <div>
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] transition-transform group-hover:scale-105">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-orange-50 text-[#ff6a00] shadow-2xs transition-transform duration-300 group-hover:scale-110">
                     <FileText className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#ff6a00] transition-colors">
-                    4. Reportes PDF
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-[#ff6a00]">F-04</span>
+                    <span className="text-xs text-zinc-400">·</span>
+                    <span className="text-xs font-medium text-zinc-500">Descarga PDF</span>
+                  </div>
+                  <h3 className="mt-1 text-lg font-bold text-zinc-950 group-hover:text-[#ff6a00] transition-colors">
+                    Reportes PDF
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Configuración de secciones, indicadores y descarga de reportes ejecutivos en PDF generados con fuentes, notas metodológicas y limitaciones claras.
+                    Configuración de secciones, indicadores y descarga de reportes ejecutivos generados en el servidor con fuentes CNR, gráficos SSR y notas metodológicas.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#ff6a00]">
@@ -274,38 +276,39 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Methodological Responsibility Section */}
-        <section className="border-t border-zinc-200 bg-zinc-50/70 py-16">
-          <div className="mx-auto max-w-7xl px-6 sm:px-8">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-8 sm:p-12 shadow-sm">
+        {/* Methodological Transparency Section */}
+        <section className="border-t border-zinc-200/80 bg-zinc-50/60 py-20 relative">
+          <div className="absolute inset-0 bg-tech-grid opacity-30 pointer-events-none" />
+          <div className="relative mx-auto max-w-7xl px-6 sm:px-8">
+            <div className="glass-surface hud-bracket rounded-3xl p-8 sm:p-12">
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#002b7f]">
-                  <TrendingUp className="size-3.5" />
-                  Principios Metodológicos y Estadísticos
+                  <Activity className="size-3.5 text-[#ff6a00]" />
+                  <span>Principios Metodológicos y Estadísticos</span>
                 </div>
-                <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950">
-                  Transparencia y Precisión Analítica
+                <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950">
+                  Transparencia y Precisión Analítica de Extremo a Extremo
                 </h2>
-                <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+                <p className="mt-3 text-sm leading-relaxed text-zinc-600">
                   ImpactAtlas separa con rigor el cálculo estadístico exhaustivo de los ejemplos semánticos para garantizar conclusiones confiables:
                 </p>
                 <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                    <h4 className="font-semibold text-xs text-[#002b7f] uppercase tracking-wide">Cálculos Exactos</h4>
+                  <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-5 shadow-2xs hover:border-[#002b7f]/30 transition-colors">
+                    <div className="font-mono text-xs font-bold text-[#002b7f] uppercase tracking-wider">Cálculos Exactos</div>
                     <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
-                      Medias, medianas y tasas calculadas directamente en PostgreSQL sobre todos los registros filtrados.
+                      Medias, medianas y tasas calculadas directamente en PostgreSQL sobre todos los registros de la cohorte filtrada.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                    <h4 className="font-semibold text-xs text-[#ff6a00] uppercase tracking-wide">Búsqueda Semántica</h4>
+                  <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-5 shadow-2xs hover:border-[#ff6a00]/30 transition-colors">
+                    <div className="font-mono text-xs font-bold text-[#ff6a00] uppercase tracking-wider">Búsqueda Semántica</div>
                     <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
                       Embeddings vectoriales de 768 dimensiones para encontrar metas cualitativas afines sin alterar promedios.
                     </p>
                   </div>
-                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                    <h4 className="font-semibold text-xs text-[#002b7f] uppercase tracking-wide">Protección de Datos</h4>
+                  <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-5 shadow-2xs hover:border-[#002b7f]/30 transition-colors">
+                    <div className="font-mono text-xs font-bold text-[#002b7f] uppercase tracking-wider">Protección de Datos</div>
                     <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
-                      Supresión automática de privacidad cuando una subcohorte contiene menos de 5 observaciones.
+                      Supresión automática de privacidad cuando una subcohorte contiene menos de 5 observaciones ($n &lt; 5$).
                     </p>
                   </div>
                 </div>
@@ -315,25 +318,8 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 text-sm text-zinc-500 sm:flex-row sm:px-8">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/logo.png"
-              alt="ImpactAtlas"
-              width={120}
-              height={40}
-              className="h-7 w-auto object-contain opacity-80"
-            />
-            <span className="text-xs text-zinc-400">|</span>
-            <span className="text-xs text-zinc-500">ImpactAtlas — Plataforma de Inclusión Financiera</span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            El Salvador • Análisis Socioeconómico y Visualización con Inteligencia Artificial
-          </p>
-        </div>
-      </footer>
+      {/* Unified Footer */}
+      <SiteFooter />
     </div>
   );
 }

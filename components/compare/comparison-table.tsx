@@ -2,7 +2,7 @@
 
 import type { DepartmentId, MetricId } from "@/src/contracts/common";
 import type { CompareResponse } from "@/src/contracts/compare";
-import { Star, ArrowUpRight, ArrowDownRight, Minus, AlertTriangle } from "lucide-react";
+import { Star, ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Layers, TrendingUp, DollarSign, Users } from "lucide-react";
 
 type DepartmentData = CompareResponse["data"]["departments"][number];
 
@@ -42,7 +42,7 @@ export function ComparisonTable({
     }
 
     if (metricId === "sample_count") {
-      return { text: `${metric.value.toLocaleString("es-SV")} reg`, status: "valid" };
+      return { text: `${metric.value.toLocaleString("es-SV")} perfiles`, status: "valid" };
     }
     if (metricId === "financial_exclusion_pct") {
       return { text: `${metric.value.toFixed(1)}%`, status: "valid" };
@@ -77,8 +77,6 @@ export function ComparisonTable({
     }
 
     // Determine good vs bad direction
-    // For income and sample: positive is good (green), negative is bad (red)
-    // For financial_exclusion_pct: positive is BAD (more exclusion), negative is GOOD (less exclusion)
     let isPositive = diff.value > 0;
     if (metricId === "financial_exclusion_pct") {
       isPositive = diff.value < 0;
@@ -93,170 +91,186 @@ export function ComparisonTable({
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards comparing Departments against Reference */}
+      {/* Reference Summary KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {selectedMetrics.map((metricId) => {
           const title =
             metricId === "financial_exclusion_pct"
               ? "Exclusión Financiera"
               : metricId === "income_mean"
-              ? "Ingreso Medio"
+              ? "Ingreso Promedio"
               : metricId === "income_median"
               ? "Ingreso Mediano"
-              : "Muestra Total";
+              : "Muestra Departamental";
 
           const refMetric = referenceDept?.metrics[metricId];
           const refFormatted = referenceDept ? formatMetric(metricId, referenceDept) : null;
 
+          const isExclusion = metricId === "financial_exclusion_pct";
+          const isIncome = metricId === "income_mean";
+
           return (
             <div
               key={metricId}
-              className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs"
+              className={`relative overflow-hidden rounded-2xl border p-4.5 shadow-2xs transition-all ${
+                isExclusion
+                  ? "border-orange-200/80 bg-gradient-to-b from-orange-50/40 via-white to-white"
+                  : isIncome
+                  ? "border-blue-200/80 bg-gradient-to-b from-blue-50/40 via-white to-white"
+                  : "border-zinc-200/80 bg-gradient-to-b from-zinc-50/50 via-white to-white"
+              }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              <div
+                className={`h-1 w-full absolute top-0 left-0 bg-gradient-to-r ${
+                  isExclusion
+                    ? "from-[#ff6a00] to-amber-400"
+                    : isIncome
+                    ? "from-[#002b7f] to-blue-400"
+                    : "from-zinc-500 to-zinc-400"
+                }`}
+              />
+              <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
+                <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-700">
                   {title}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-[#002b7f]">
-                  <Star className="size-3 fill-[#002b7f]" />
-                  Base: {referenceDept?.label ?? "—"}
+                {isExclusion ? (
+                  <TrendingUp className="size-4 text-[#ff6a00]" />
+                ) : isIncome ? (
+                  <DollarSign className="size-4 text-[#002b7f]" />
+                ) : (
+                  <Users className="size-4 text-zinc-500" />
+                )}
+              </div>
+
+              <div className="font-mono text-2xl font-extrabold text-zinc-950 tracking-tight">
+                {refFormatted?.text ?? "—"}
+              </div>
+
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-500">
+                <Star className="size-3 fill-orange-400 text-orange-400" />
+                <span className="font-medium">
+                  Base: <strong className="text-zinc-800">{referenceDept?.label ?? "N/D"}</strong>
                 </span>
               </div>
-              <div className="mt-3">
-                <span className="text-2xl font-black text-zinc-900 tracking-tight">
-                  {refFormatted?.text ?? "—"}
-                </span>
-              </div>
-              <p className="mt-2 text-[11px] text-zinc-500">
-                Punto de referencia territorial para el cálculo de brechas relativas y puntos porcentuales.
-              </p>
             </div>
           );
         })}
       </div>
 
-      {/* Main Comparative Matrix Table */}
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xs">
-        <div className="p-4 sm:px-6 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* Futuristic Comparison Matrix Table */}
+      <div className="glass-surface hud-bracket overflow-hidden rounded-3xl border border-zinc-200/80 shadow-sm">
+        <div className="border-b border-zinc-200/60 p-5 bg-gradient-to-r from-zinc-50/80 to-white flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-zinc-900">
-              Matriz Comparativa de Brechas y Diferencias
-            </h3>
-            <p className="text-xs text-zinc-500">
-              Las diferencias ($\Delta$) se calculan restando el valor del departamento de referencia ({referenceDept?.label}).
+            <h3 className="text-sm font-extrabold text-zinc-950">Matriz Comparativa Departamental</h3>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              Diferencias calculadas respecto al territorio base (
+              <span className="font-bold text-orange-600">{referenceDept?.label}</span>).
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-zinc-600">
-            <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
-              <span className="size-2 rounded-full bg-emerald-500" />
-              Favorable
-            </span>
-            <span className="inline-flex items-center gap-1 text-rose-700 font-medium ml-2">
-              <span className="size-2 rounded-full bg-rose-500" />
-              Desfavorable
-            </span>
-          </div>
+          <span className="font-mono text-[11px] text-zinc-400">
+            {departments.length} TERRITORIOS
+          </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold uppercase tracking-wider">
+            <thead className="border-b border-zinc-200/80 bg-zinc-50/90 text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-600">
               <tr>
-                <th className="py-3.5 pl-6 pr-3">Departamento</th>
-                <th className="py-3.5 px-3 text-right">Muestra (n)</th>
-                {selectedMetrics.includes("income_mean") && (
-                  <th className="py-3.5 px-3 text-right">Ingreso Medio Estimado</th>
-                )}
-                {selectedMetrics.includes("income_median") && (
-                  <th className="py-3.5 px-3 text-right">Ingreso Mediano</th>
-                )}
-                {selectedMetrics.includes("financial_exclusion_pct") && (
-                  <th className="py-3.5 px-3 text-right">Exclusión Financiera</th>
-                )}
-                <th className="py-3.5 pl-3 pr-6 text-center">Referencia</th>
+                <th className="py-3 px-4 sm:px-6">Departamento</th>
+                {selectedMetrics.map((metricId) => (
+                  <th key={metricId} className="py-3 px-4">
+                    {metricId === "financial_exclusion_pct"
+                      ? "Exclusión (%)"
+                      : metricId === "income_mean"
+                      ? "Ingreso Medio ($)"
+                      : metricId === "income_median"
+                      ? "Ingreso Mediano ($)"
+                      : "Muestra (n)"}
+                  </th>
+                ))}
+                <th className="py-3 px-4 text-right">Referencia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 text-zinc-700">
+            <tbody className="divide-y divide-zinc-200/60 font-sans">
               {departments.map((dept) => {
                 const isRef = dept.id === referenceId;
 
                 return (
                   <tr
                     key={dept.id}
-                    className={`transition-colors ${
-                      isRef ? "bg-blue-50/40 font-medium" : "hover:bg-zinc-50/80"
+                    className={`transition-colors duration-150 ${
+                      isRef
+                        ? "bg-orange-50/40 hover:bg-orange-50/60"
+                        : "hover:bg-zinc-50/80"
                     }`}
                   >
-                    {/* Department name */}
-                    <td className="py-3.5 pl-6 pr-3">
+                    {/* Department Name */}
+                    <td className="py-3.5 px-4 sm:px-6">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-zinc-900">{dept.label}</span>
                         {isRef && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#002b7f] px-2 py-0.5 text-[10px] font-semibold text-white">
-                            <Star className="size-2.5 fill-white" />
-                            Base
+                          <Star className="size-3.5 fill-orange-500 text-orange-500 shrink-0" />
+                        )}
+                        <span className={`font-bold ${isRef ? "text-orange-950" : "text-zinc-900"}`}>
+                          {dept.label}
+                        </span>
+                        {isRef && (
+                          <span className="rounded-full bg-orange-100 border border-orange-200 px-2 py-0.5 font-mono text-[10px] font-bold text-orange-800">
+                            BASE
                           </span>
                         )}
                       </div>
                     </td>
 
-                    {/* Sample Size */}
-                    <td className="py-3.5 px-3 text-right">
-                      {dept.sampleSize === null ? (
-                        <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px]">
-                          <AlertTriangle className="size-3" />
-                          &lt; 5
-                        </span>
-                      ) : (
-                        <span>{dept.sampleSize.toLocaleString("es-SV")}</span>
-                      )}
-                    </td>
+                    {/* Metrics and Diff Columns */}
+                    {selectedMetrics.map((metricId) => {
+                      const formatted = formatMetric(metricId, dept);
+                      const diff = formatDifference(metricId, dept);
 
-                    {/* Income Mean */}
-                    {selectedMetrics.includes("income_mean") && (
-                      <td className="py-3.5 px-3 text-right">
-                        {renderMetricCell(
-                          formatMetric("income_mean", dept),
-                          formatDifference("income_mean", dept)
-                        )}
-                      </td>
-                    )}
+                      return (
+                        <td key={metricId} className="py-3.5 px-4">
+                          <div className="font-mono font-bold text-zinc-900 text-xs">
+                            {formatted.text}
+                          </div>
 
-                    {/* Income Median */}
-                    {selectedMetrics.includes("income_median") && (
-                      <td className="py-3.5 px-3 text-right">
-                        {renderMetricCell(
-                          formatMetric("income_median", dept),
-                          formatDifference("income_median", dept)
-                        )}
-                      </td>
-                    )}
+                          {/* Difference Badge */}
+                          {!isRef && diff.type !== "base" && (
+                            <div className="mt-1 flex items-center gap-1 font-mono text-[10px]">
+                              {diff.type === "positive" ? (
+                                <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 font-bold text-emerald-700">
+                                  <ArrowUpRight className="size-3" />
+                                  {diff.text}
+                                </span>
+                              ) : diff.type === "negative" ? (
+                                <span className="inline-flex items-center gap-0.5 rounded-md bg-rose-50 border border-rose-200/80 px-1.5 py-0.5 font-bold text-rose-700">
+                                  <ArrowDownRight className="size-3" />
+                                  {diff.text}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-0.5 rounded-md bg-zinc-100 px-1.5 py-0.5 text-zinc-500">
+                                  <Minus className="size-2.5" />
+                                  {diff.text}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
 
-                    {/* Financial Exclusion */}
-                    {selectedMetrics.includes("financial_exclusion_pct") && (
-                      <td className="py-3.5 px-3 text-right">
-                        {renderMetricCell(
-                          formatMetric("financial_exclusion_pct", dept),
-                          formatDifference("financial_exclusion_pct", dept)
-                        )}
-                      </td>
-                    )}
-
-                    {/* Reference toggle button */}
-                    <td className="py-3.5 pl-3 pr-6 text-center">
-                      {isRef ? (
-                        <span className="text-[11px] font-semibold text-[#002b7f]">
-                          Base activa
-                        </span>
-                      ) : (
+                    {/* Action to set as Reference */}
+                    <td className="py-3.5 px-4 text-right">
+                      {!isRef ? (
                         <button
                           type="button"
                           onClick={() => onSetReference(dept.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:border-[#002b7f] hover:text-[#002b7f] transition-all shadow-2xs"
+                          className="rounded-lg border border-zinc-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:border-[#002b7f] hover:text-[#002b7f] hover:bg-blue-50/50 transition-all shadow-2xs active:scale-95"
                         >
-                          <Star className="size-3" />
-                          Hacer base
+                          Fijar Base
                         </button>
+                      ) : (
+                        <span className="font-mono text-[11px] font-bold text-orange-600">
+                          ACTUAL
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -266,50 +280,6 @@ export function ComparisonTable({
           </table>
         </div>
       </div>
-    </div>
-  );
-}
-
-function renderMetricCell(
-  formatted: { text: string; status: string; reason?: string | null },
-  diff: { text: string; type: "base" | "positive" | "negative" | "neutral" }
-) {
-  if (formatted.status === "suppressed") {
-    return (
-      <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
-        <AlertTriangle className="size-3" />
-        Suprimido (n &lt; 5)
-      </span>
-    );
-  }
-
-  if (formatted.status === "empty") {
-    return <span className="text-zinc-400">Sin datos</span>;
-  }
-
-  return (
-    <div className="flex items-center justify-end gap-2">
-      <span className="font-semibold text-zinc-900">{formatted.text}</span>
-      {diff.type === "base" ? (
-        <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-          Base
-        </span>
-      ) : diff.type === "positive" ? (
-        <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-          <ArrowUpRight className="size-3" />
-          {diff.text}
-        </span>
-      ) : diff.type === "negative" ? (
-        <span className="inline-flex items-center gap-0.5 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
-          <ArrowDownRight className="size-3" />
-          {diff.text}
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
-          <Minus className="size-3" />
-          {diff.text}
-        </span>
-      )}
     </div>
   );
 }
