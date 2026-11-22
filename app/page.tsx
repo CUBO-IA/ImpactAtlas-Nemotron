@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   BarChart3,
   Bot,
-  BrainCircuit,
   Database,
   FileText,
   GitCompare,
@@ -34,10 +33,10 @@ export default function Home() {
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-zinc-600 md:flex">
             <Link
-              href="#explorador"
-              className="transition-colors hover:text-[#002b7f]"
+              href="/explorador"
+              className="text-[#002b7f] font-semibold transition-colors hover:text-[#002060]"
             >
-              Explorador & Mapa
+              Explorador y Mapa
             </Link>
             <Link
               href="#comparador"
@@ -59,10 +58,13 @@ export default function Home() {
             </Link>
           </nav>
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              50,000 Muestras Cargadas
-            </span>
+            <Link
+              href="/explorador"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#002b7f] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#002060]"
+            >
+              <LineChart className="size-3.5" />
+              Abrir Explorador
+            </Link>
           </div>
         </div>
       </header>
@@ -98,13 +100,13 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <a
-                href="#explorador"
+              <Link
+                href="/explorador"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#002b7f] px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#002060] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#002b7f]"
               >
                 <LineChart className="size-4" />
-                Explorar Datos & Mapa
-              </a>
+                Abrir Explorador y Mapa
+              </Link>
               <a
                 href="#chat"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50"
@@ -169,7 +171,7 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-[#ff6a00]">
-                  Funcionalidades del MVP
+                  Capacidades de la Plataforma
                 </span>
                 <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
                   Las Cuatro Áreas de ImpactAtlas
@@ -182,23 +184,26 @@ export default function Home() {
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {/* Function 1: Explorador */}
-              <div id="explorador" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-300 hover:shadow-md flex flex-col justify-between">
+              <Link
+                href="/explorador"
+                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] transition-transform group-hover:scale-105">
                     <BarChart3 className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950">
+                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
                     1. Explorador y Mapa
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Mapeo coroplético interactivo de los 14 departamentos con MapLibre. Filtros por ingresos, educación y ocupación con panel de distribuciones ECharts.
+                    Mapeo coroplético interactivo de los 14 departamentos. Filtros por ingresos, educación y ocupación con panel de distribuciones y estadísticas en tiempo real.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">
-                  <span>Fase 2 (D1-04 a D1-06)</span>
+                  <span>Abrir mapa interactivo</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </div>
+              </Link>
 
               {/* Function 2: Comparador */}
               <div id="comparador" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">
@@ -214,7 +219,7 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#ff6a00]">
-                  <span>Fase 3 (D1-07 a D1-09)</span>
+                  <span>Comparación territorial</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </div>
@@ -233,7 +238,7 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">
-                  <span>Fase 4 (D1-10 a D1-12)</span>
+                  <span>Consultas en lenguaje natural</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </div>
@@ -252,7 +257,7 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#ff6a00]">
-                  <span>Fase 5 (D1-13 a D1-15)</span>
+                  <span>Exportación ejecutiva</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </div>
@@ -260,63 +265,39 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Technical Architecture Overview */}
+        {/* Methodological Responsibility Section */}
         <section className="border-t border-zinc-200 bg-zinc-50/70 py-16">
           <div className="mx-auto max-w-7xl px-6 sm:px-8">
             <div className="rounded-3xl border border-zinc-200 bg-white p-8 sm:p-12 shadow-sm">
-              <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-center">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#002b7f]">
-                    <BrainCircuit className="size-3.5" />
-                    Arquitectura de Datos y Visualización
-                  </div>
-                  <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950">
-                    Principios de Visualización Responsable
-                  </h2>
-                  <p className="mt-4 text-sm leading-relaxed text-zinc-600">
-                    El proyecto separa con rigor el cálculo estadístico exhaustivo de los ejemplos semánticos para evitar sesgos de representatividad:
-                  </p>
-                  <ul className="mt-6 space-y-3 text-xs sm:text-sm text-zinc-700">
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-[#002b7f]" />
-                      <span><strong>Cálculos exactos en SQL:</strong> Todos los promedios, porcentajes y totales se calculan sobre la totalidad de la muestra filtrada.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-[#ff6a00]" />
-                      <span><strong>Búsqueda vectorial contextual:</strong> Los vectores en pgvector se utilizan para encontrar ejemplos cualitativos afines, nunca para extrapolar conteos.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-[#002b7f]" />
-                      <span><strong>Protección y supresión:</strong> Reglas claras para alertar sobre submuestras pequeñas y evitar conclusiones apresuradas.</span>
-                    </li>
-                  </ul>
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[#002b7f]">
+                  <TrendingUp className="size-3.5" />
+                  Principios Metodológicos y Estadísticos
                 </div>
-
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 shadow-inner">
-                  <div className="flex items-center justify-between border-b border-zinc-200 pb-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-emerald-500" />
-                      <span className="text-xs font-semibold text-zinc-800">Estado del Sistema Local</span>
-                    </div>
-                    <span className="text-xs font-mono text-zinc-400">Postgres 17 + pgvector</span>
+                <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950">
+                  Transparencia y Precisión Analítica
+                </h2>
+                <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+                  ImpactAtlas separa con rigor el cálculo estadístico exhaustivo de los ejemplos semánticos para garantizar conclusiones confiables:
+                </p>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <h4 className="font-semibold text-xs text-[#002b7f] uppercase tracking-wide">Cálculos Exactos</h4>
+                    <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                      Medias, medianas y tasas calculadas directamente en PostgreSQL sobre todos los registros filtrados.
+                    </p>
                   </div>
-                  <div className="space-y-3 font-mono text-xs">
-                    <div className="rounded-lg bg-white p-2.5 border border-zinc-200 flex justify-between">
-                      <span className="text-zinc-500">Dataset snapshot:</span>
-                      <span className="text-zinc-900 font-semibold">50,000 registros restaurados</span>
-                    </div>
-                    <div className="rounded-lg bg-white p-2.5 border border-zinc-200 flex justify-between">
-                      <span className="text-zinc-500">Vector Embeddings:</span>
-                      <span className="text-zinc-900 font-semibold">50,000 / 768 dims (OK)</span>
-                    </div>
-                    <div className="rounded-lg bg-white p-2.5 border border-zinc-200 flex justify-between">
-                      <span className="text-zinc-500">Esquemas Zod (src/contracts):</span>
-                      <span className="text-emerald-600 font-semibold">4 tests pasados</span>
-                    </div>
-                    <div className="rounded-lg bg-white p-2.5 border border-zinc-200 flex justify-between">
-                      <span className="text-zinc-500">Next.js App Router:</span>
-                      <span className="text-emerald-600 font-semibold">Listo en http://localhost:3000</span>
-                    </div>
+                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <h4 className="font-semibold text-xs text-[#ff6a00] uppercase tracking-wide">Búsqueda Semántica</h4>
+                    <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                      Embeddings vectoriales de 768 dimensiones para encontrar metas cualitativas afines sin alterar promedios.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <h4 className="font-semibold text-xs text-[#002b7f] uppercase tracking-wide">Protección de Datos</h4>
+                    <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                      Supresión automática de privacidad cuando una subcohorte contiene menos de 5 observaciones.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -337,10 +318,10 @@ export default function Home() {
               className="h-7 w-auto object-contain opacity-80"
             />
             <span className="text-xs text-zinc-400">|</span>
-            <span className="text-xs text-zinc-500">ImpactAtlas — Equipo CUBO-IA</span>
+            <span className="text-xs text-zinc-500">ImpactAtlas — Plataforma de Inclusión Financiera</span>
           </div>
           <p className="text-xs text-zinc-400">
-            Developer 1: Frontend & Visualización • Next.js 16 • Tailwind CSS v4
+            El Salvador • Análisis Socioeconómico y Visualización con Inteligencia Artificial
           </p>
         </div>
       </footer>
