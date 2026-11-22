@@ -239,7 +239,7 @@ function ExploradorContent() {
             <Link href="/comparador" className="transition-colors hover:text-[#002b7f]">
               Comparador
             </Link>
-            <Link href="/#chat" className="transition-colors hover:text-[#002b7f]">
+            <Link href="/chat" className="transition-colors hover:text-[#002b7f]">
               Asistente IA
             </Link>
             <Link href="/#reportes" className="transition-colors hover:text-[#002b7f]">

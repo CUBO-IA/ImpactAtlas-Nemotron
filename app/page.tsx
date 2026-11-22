@@ -45,7 +45,7 @@ export default function Home() {
               Comparador
             </Link>
             <Link
-              href="#chat"
+              href="/chat"
               className="transition-colors hover:text-[#002b7f]"
             >
               Asistente IA
@@ -107,13 +107,13 @@ export default function Home() {
                 <LineChart className="size-4" />
                 Abrir Explorador y Mapa
               </Link>
-              <a
-                href="#chat"
+              <Link
+                href="/chat"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:border-zinc-400 hover:bg-zinc-50"
               >
                 <Bot className="size-4 text-[#ff6a00]" />
                 Consultar Asistente IA
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -228,12 +228,15 @@ export default function Home() {
               </Link>
 
               {/* Function 3: Chat */}
-              <div id="chat" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-300 hover:shadow-md flex flex-col justify-between">
+              <Link
+                href="/chat"
+                className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] transition-transform group-hover:scale-105">
                     <Bot className="size-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-bold text-zinc-950">
+                  <h3 className="mt-5 text-lg font-bold text-zinc-950 group-hover:text-[#002b7f] transition-colors">
                     3. Chat & Asistente IA
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
@@ -241,10 +244,10 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">
-                  <span>Consultas en lenguaje natural</span>
+                  <span>Abrir asistente</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </div>
+              </Link>
 
               {/* Function 4: Reportes */}
               <div id="reportes" className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition-all hover:border-orange-300 hover:shadow-md flex flex-col justify-between">

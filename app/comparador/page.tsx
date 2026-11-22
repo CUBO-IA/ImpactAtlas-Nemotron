@@ -232,7 +232,7 @@ function ComparadorContent() {
               Comparador Departamental
             </Link>
             <Link
-              href="#chat"
+              href="/chat"
               className="transition-colors hover:text-[#002b7f]"
             >
               Chat Asistente
