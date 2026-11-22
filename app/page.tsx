@@ -54,11 +54,12 @@ export default function Home() {
             <div className="mx-auto flex justify-center mb-8">
               <div className="relative p-2 rounded-3xl bg-white/60 backdrop-blur-lg border border-zinc-200/60 shadow-[0_8px_30px_rgb(0,43,127,0.08)]">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo.svg"
                   alt="ImpactAtlas"
-                  width={380}
-                  height={125}
+                  width={360}
+                  height={120}
                   priority
+                  unoptimized
                   className="h-16 sm:h-20 w-auto object-contain drop-shadow-sm"
                 />
               </div>

@@ -42,11 +42,12 @@ export function SiteHeader() {
             <div className="relative">
               <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[#002b7f]/20 to-[#ff6a00]/20 opacity-0 blur-sm transition duration-300 group-hover:opacity-100" />
               <Image
-                src="/images/logo.png"
+                src="/images/logo.svg"
                 alt="ImpactAtlas Logo"
                 width={150}
                 height={50}
                 priority
+                unoptimized
                 className="relative h-9 w-auto object-contain"
               />
             </div>

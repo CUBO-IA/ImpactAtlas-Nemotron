@@ -14,10 +14,11 @@ export function SiteFooter() {
           <div className="space-y-3 max-w-md">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/logo.png"
+                src="/images/logo.svg"
                 alt="ImpactAtlas Logo"
                 width={140}
-                height={46}
+                height={47}
+                unoptimized
                 className="h-8 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
               />
             </Link>
