@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  SV_DEPARTMENT_PATHS,
-  SV_MAP_WIDTH,
-  SV_MAP_HEIGHT,
-  type DeptMapPath,
-} from "@/src/lib/sv-map-paths";
+import { useEffect, useRef, useState } from "react";
+import * as maplibregl from "maplibre-gl";
+import type { StyleSpecification } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import type { DepartmentId, MetricValue } from "@/src/contracts/common";
-import { Crosshair } from "lucide-react";
 
 export type ActiveMapMetric = "financial_exclusion_pct" | "income_mean" | "sample_count";
 
@@ -20,6 +16,49 @@ interface SvChoroplethMapProps {
   onChangeMetric: (metric: ActiveMapMetric) => void;
 }
 
+const GEOJSON_URL = "/geo/sv-departamentos.geojson";
+
+const style: StyleSpecification = {
+  version: 8,
+  sources: {
+    departments: { type: "geojson", data: GEOJSON_URL },
+  },
+  layers: [
+    { id: "background", type: "background", paint: { "background-color": "#f8fafc" } },
+    {
+      id: "departments-fill",
+      type: "fill",
+      source: "departments",
+      paint: { "fill-color": ["coalesce", ["feature-state", "color"], "#e2e8f0"], "fill-opacity": 0.92 },
+    },
+    {
+      id: "departments-line",
+      type: "line",
+      source: "departments",
+      paint: { "line-color": "#ffffff", "line-width": 1.2 },
+    },
+    {
+      id: "departments-selected",
+      type: "line",
+      source: "departments",
+      filter: ["==", ["get", "departmentId"], ""],
+      paint: { "line-color": "#002b7f", "line-width": 3 },
+    },
+  ],
+};
+
+const metricLabels: Record<ActiveMapMetric, string> = {
+  financial_exclusion_pct: "Exclusión",
+  income_mean: "Ingreso Promedio",
+  sample_count: "Muestra",
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[ch]!);
+}
+
 export function SvChoroplethMap({
   data,
   selectedDepartment,
@@ -27,290 +66,204 @@ export function SvChoroplethMap({
   activeMetric,
   onChangeMetric,
 }: SvChoroplethMapProps) {
-  const [hoveredDept, setHoveredDept] = useState<DeptMapPath | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
-
-  // Extract values to compute color scales
-  const values: number[] = [];
-  SV_DEPARTMENT_PATHS.forEach((dept) => {
-    const metrics = data.get(dept.id);
-    const val = metrics?.[activeMetric]?.value;
-    if (typeof val === "number" && !metrics?.[activeMetric]?.suppressed) {
-      values.push(val);
-    }
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const dataRef = useRef(data);
+  const metricRef = useRef(activeMetric);
+  const selectionRef = useRef<{ selected: DepartmentId | null; onSelect: (id: DepartmentId | null) => void }>({
+    selected: selectedDepartment, onSelect: onSelectDepartment,
   });
+  const [readyTick, setReadyTick] = useState(0);
+  const [error, setError] = useState(false);
 
-  const minVal = values.length > 0 ? Math.min(...values) : 0;
-  const maxVal = values.length > 0 ? Math.max(...values) : 100;
+  dataRef.current = data;
+  metricRef.current = activeMetric;
+  selectionRef.current = { selected: selectedDepartment, onSelect: onSelectDepartment };
 
-  function getColor(deptId: string): string {
-    const metrics = data.get(deptId);
-    const metricObj = metrics?.[activeMetric];
-
-    if (!metricObj || metricObj.value === null) {
-      return "#f1f5f9"; // Slate-100 for empty / no data
+  useEffect(() => {
+    if (!containerRef.current) return;
+    maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style,
+        bounds: [[-92.3, 13.1], [-87.6, 14.5]],
+        fitBoundsOptions: { padding: 24 },
+        attributionControl: false,
+        dragRotate: false,
+        pitchWithRotate: false,
+      });
+    } catch {
+      setError(true);
+      return;
     }
-    if (metricObj.suppressed) {
-      return "#e2e8f0"; // Slate-200 for suppressed
+    mapRef.current = map;
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+    // El GeoJSON local pesa ~19 MB: reaplicar colores cuando el source termina de cargar.
+    map.on("load", () => setReadyTick((tick) => tick + 1));
+    map.on("sourcedata", (event) => {
+      if (event.sourceId === "departments" && map.isSourceLoaded("departments")) {
+        setReadyTick((tick) => tick + 1);
+      }
+    });
+    map.on("error", () => setError(true));
+
+    map.on("click", "departments-fill", (event) => {
+      const id = event.features?.[0]?.properties?.departmentId as string | undefined;
+      if (!id) return;
+      const { selected, onSelect } = selectionRef.current;
+      onSelect(selected === id ? null : (id as DepartmentId));
+    });
+
+    map.on("mousemove", "departments-fill", (event) => {
+      const feature = event.features?.[0];
+      const id = feature?.properties?.departmentId as string | undefined;
+      if (!id) return;
+      const metric = dataRef.current.get(id)?.[metricRef.current];
+      const value = metric?.value;
+      const text = value === null || value === undefined
+        ? "Sin datos"
+        : metric?.suppressed
+        ? "Suprimido"
+        : metricRef.current === "financial_exclusion_pct"
+        ? `${value.toFixed(1)}%`
+        : metricRef.current === "income_mean"
+        ? `$${value.toLocaleString("es-SV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+        : `${value.toLocaleString()} perfiles`;
+      const name = feature?.properties?.name as string | undefined ?? id;
+      popupRef.current?.remove();
+      popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false })
+        .setLngLat(event.lngLat)
+        .setHTML(`<strong>${escapeHtml(name)}</strong><br/>${metricLabels[metricRef.current]}: ${escapeHtml(text)}`)
+        .addTo(map);
+    });
+    map.on("mouseleave", "departments-fill", () => {
+      popupRef.current?.remove();
+      popupRef.current = null;
+    });
+
+    return () => {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      map.remove();
+      mapRef.current = null;
+      setReadyTick(0);
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyTick) return;
+    const published = new Map<string, number>();
+    data.forEach((metrics, id) => {
+      const value = metrics[activeMetric]?.value;
+      if (typeof value === "number" && !metrics[activeMetric]?.suppressed) published.set(id, value);
+    });
+    const values = [...published.values()];
+    const minVal = values.length ? Math.min(...values) : 0;
+    const maxVal = values.length ? Math.max(...values) : 100;
+
+    const colors: Record<ActiveMapMetric, string[]> = {
+      financial_exclusion_pct: ["#ffedd5", "#fdba74", "#ea580c", "#9a3412"],
+      income_mean: ["#dbeafe", "#60a5fa", "#2563eb", "#1e3a8a"],
+      sample_count: ["#ede9fe", "#a78bfa", "#7c3aed", "#4c1d95"],
+    };
+    const ramp = colors[activeMetric];
+    const cases: string[] = [];
+    for (const [id, metric] of data) {
+      const value = metric[activeMetric];
+      let color = "#f1f5f9";
+      if (value?.suppressed) color = "#e2e8f0";
+      else if (typeof value?.value === "number") {
+        const ratio = maxVal > minVal ? (value.value - minVal) / (maxVal - minVal) : 0.5;
+        color = ramp[Math.min(3, Math.floor(ratio * 4))];
+      }
+      cases.push(id, color);
     }
+    map.setPaintProperty("departments-fill", "fill-color", ["match", ["get", "departmentId"], ...cases, "#e2e8f0"] as never);
+  }, [data, activeMetric, readyTick]);
 
-    const val = metricObj.value;
-    const ratio = maxVal > minVal ? (val - minVal) / (maxVal - minVal) : 0.5;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyTick) return;
+    map.setFilter("departments-selected", ["==", ["get", "departmentId"], selectedDepartment ?? ""] as never);
+  }, [selectedDepartment, readyTick]);
 
-    if (activeMetric === "financial_exclusion_pct") {
-      // Warm orange to deep amber/vermilion
-      if (ratio < 0.25) return "#ffedd5"; // orange-100
-      if (ratio < 0.5) return "#fdba74"; // orange-300
-      if (ratio < 0.75) return "#ea580c"; // orange-600
-      return "#9a3412"; // orange-800
-    } else if (activeMetric === "income_mean") {
-      // Light cyan-blue to deep imperial navy
-      if (ratio < 0.25) return "#dbeafe"; // blue-100
-      if (ratio < 0.5) return "#60a5fa"; // blue-400
-      if (ratio < 0.75) return "#2563eb"; // blue-600
-      return "#1e3a8a"; // blue-900
-    } else {
-      // Indigo to violet
-      if (ratio < 0.25) return "#ede9fe"; // violet-100
-      if (ratio < 0.5) return "#a78bfa"; // violet-400
-      if (ratio < 0.75) return "#7c3aed"; // violet-600
-      return "#4c1d95"; // violet-900
-    }
-  }
-
-  function formatValue(val: number | null | undefined): string {
-    if (val === null || val === undefined) return "Sin datos";
-    if (activeMetric === "financial_exclusion_pct") return `${val.toFixed(1)}%`;
-    if (activeMetric === "income_mean") return `$${val.toLocaleString("es-SV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
-    return `${val.toLocaleString()} perfiles`;
-  }
-
-  const selectedDeptObj = SV_DEPARTMENT_PATHS.find((d) => d.id === selectedDepartment);
+  const selectedName = data.has(selectedDepartment ?? "") ? selectedDepartment : null;
 
   return (
     <div className="glass-surface hud-bracket relative rounded-3xl p-6 sm:p-7 flex flex-col transition-all duration-300 shadow-sm">
-      {/* Map Header with Telemetry & Metric Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200/60">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-              SVG local · 14 departamentos
+              MapLibre · GeoJSON local · 14 departamentos
             </span>
           </div>
           <h2 className="text-base font-extrabold text-zinc-950 flex items-center gap-2">
             Cartografía Coroplética Interactiva
           </h2>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Selecciona un territorio para activar el visor estadístico o haz clic para alternar.
+            Selecciona un territorio para activar el visor estadístico o cambia a la vista de tabla accesible.
           </p>
         </div>
 
-        {/* Metric Selector Buttons */}
         <div className="inline-flex rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-1 text-xs font-semibold text-zinc-600 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => onChangeMetric("financial_exclusion_pct")}
-            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
-              activeMetric === "financial_exclusion_pct"
-                ? "bg-white font-bold text-[#ff6a00] shadow-xs ring-1 ring-zinc-950/5"
-                : "hover:text-zinc-950 hover:bg-white/50"
-            }`}
-          >
-            Exclusión (%)
-          </button>
-          <button
-            type="button"
-            onClick={() => onChangeMetric("income_mean")}
-            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
-              activeMetric === "income_mean"
-                ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
-                : "hover:text-zinc-950 hover:bg-white/50"
-            }`}
-          >
-            Ingreso Promedio ($)
-          </button>
-          <button
-            type="button"
-            onClick={() => onChangeMetric("sample_count")}
-            className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
-              activeMetric === "sample_count"
-                ? "bg-white font-bold text-violet-700 shadow-xs ring-1 ring-zinc-950/5"
-                : "hover:text-zinc-950 hover:bg-white/50"
-            }`}
-          >
-            Muestra (n)
-          </button>
+          {(Object.keys(metricLabels) as ActiveMapMetric[]).map((metric) => (
+            <button
+              key={metric}
+              type="button"
+              onClick={() => onChangeMetric(metric)}
+              aria-pressed={activeMetric === metric}
+              className={`rounded-xl px-3 py-1.5 transition-all duration-200 ${
+                activeMetric === metric
+                  ? "bg-white font-bold text-[#002b7f] shadow-xs ring-1 ring-zinc-950/5"
+                  : "hover:text-zinc-950 hover:bg-white/50"
+              }`}
+            >
+              {metric === "financial_exclusion_pct" ? "Exclusión (%)"
+                : metric === "income_mean" ? "Ingreso Promedio ($)" : "Muestra (n)"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Map SVG Canvas with Ambient Backdrop */}
-      <div
-        className="relative my-4 flex-1 flex items-center justify-center overflow-hidden min-h-[380px] rounded-2xl bg-gradient-to-b from-blue-50/20 via-zinc-50/30 to-zinc-50/10 border border-zinc-200/50"
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-        }}
-        onMouseLeave={() => {
-          setHoveredDept(null);
-          setTooltipPos(null);
-        }}
-      >
-        {/* Subtle Map Grid lines */}
-        <div className="absolute inset-0 bg-tech-dots opacity-40 pointer-events-none" />
-
-        <svg
-          viewBox={`0 0 ${SV_MAP_WIDTH} ${SV_MAP_HEIGHT}`}
-          className="relative z-10 h-full w-full max-h-[460px] select-none transition-all"
-          role="img"
+      <div className="relative my-4 flex-1 min-h-[380px] rounded-2xl overflow-hidden border border-zinc-200/50 bg-slate-50">
+        <div
+          ref={containerRef}
+          className="maplibre-container"
+          style={{ position: "absolute", inset: 0 }}
+          role="application"
           aria-label="Mapa coroplético interactivo de El Salvador"
-        >
-          {SV_DEPARTMENT_PATHS.map((dept) => {
-            const isSelected = selectedDepartment === dept.id;
-            const isHovered = hoveredDept?.id === dept.id;
-            const fillColor = getColor(dept.id);
-
-            return (
-              <g key={dept.id} className="cursor-pointer group">
-                <path
-                  d={dept.d}
-                  fill={fillColor}
-                  stroke={isSelected ? "#002b7f" : isHovered ? "#ff6a00" : "#ffffff"}
-                  strokeWidth={isSelected ? 3.5 : isHovered ? 2.5 : 1.2}
-                  strokeLinejoin="round"
-                  style={{
-                    filter: isSelected
-                      ? "drop-shadow(0 6px 16px rgba(0, 43, 127, 0.4))"
-                      : isHovered
-                      ? "drop-shadow(0 4px 12px rgba(255, 106, 0, 0.35))"
-                      : "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))",
-                    transition: "fill 0.3s ease, stroke 0.2s ease, filter 0.2s ease",
-                  }}
-                  className="focus:outline-none"
-                  tabIndex={0}
-                  role="button"
-                  aria-pressed={isSelected}
-                  aria-label={`${dept.name}: ${formatValue(data.get(dept.id)?.[activeMetric]?.value)}`}
-                  onMouseEnter={() => setHoveredDept(dept)}
-                  onClick={() => {
-                    onSelectDepartment(selectedDepartment === dept.id ? null : (dept.id as DepartmentId));
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onSelectDepartment(selectedDepartment === dept.id ? null : (dept.id as DepartmentId));
-                    }
-                  }}
-                />
-
-                {/* Center dot / centroid radar ping */}
-                {isSelected ? (
-                  <g className="pointer-events-none">
-                    <circle
-                      cx={dept.cx}
-                      cy={dept.cy}
-                      r={7}
-                      fill="none"
-                      stroke="#002b7f"
-                      strokeWidth={1.5}
-                      className="animate-ping opacity-75"
-                    />
-                    <circle
-                      cx={dept.cx}
-                      cy={dept.cy}
-                      r={3.5}
-                      fill="#002b7f"
-                      stroke="#ffffff"
-                      strokeWidth={1.2}
-                    />
-                  </g>
-                ) : (
-                  <circle
-                    cx={dept.cx}
-                    cy={dept.cy}
-                    r={isHovered ? 2.8 : 2}
-                    fill={isHovered ? "#ff6a00" : "#ffffff"}
-                    stroke="#475569"
-                    strokeWidth={0.8}
-                    className="pointer-events-none opacity-80 transition-all duration-200"
-                  />
-                )}
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Futuristic Glassmorphic Hover Tooltip */}
-        {hoveredDept && tooltipPos && (
-          <div
-            className="pointer-events-none absolute z-30 rounded-2xl bg-zinc-950/90 border border-white/20 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md transition-transform transform -translate-x-1/2 -translate-y-full mb-3 min-w-[190px]"
-            style={{ left: tooltipPos.x, top: tooltipPos.y - 14 }}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5 mb-2">
-              <span className="font-extrabold text-sm text-zinc-100">{hoveredDept.name}</span>
-              <span className="font-mono text-[10px] text-zinc-400 uppercase">DEPTO</span>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 text-xs">
-              <span className="text-zinc-400">
-                {activeMetric === "financial_exclusion_pct"
-                  ? "Exclusión:"
-                  : activeMetric === "income_mean"
-                  ? "Ingreso Promedio:"
-                  : "Muestra:"}
-              </span>
-              <span className="font-mono font-bold text-orange-400">
-                {formatValue(data.get(hoveredDept.id)?.[activeMetric]?.value)}
-              </span>
-            </div>
-
-            <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-zinc-400">
-              <span>{selectedDepartment === hoveredDept.id ? "Clic para deseleccionar" : "Clic para ver detalle"}</span>
-              <Crosshair className="size-3 text-zinc-500" />
-            </div>
+        />
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-zinc-600">
+            El mapa no está disponible en este navegador. Usa la vista de tabla accesible para seleccionar departamentos.
           </div>
         )}
       </div>
 
-      {/* Map Legend & Active Department Footer */}
       <div className="mt-auto pt-4 border-t border-zinc-200/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
           <span className="font-mono text-zinc-500 font-semibold text-[11px] uppercase tracking-wider">Escala:</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] font-bold text-zinc-600">{minVal.toFixed(0)}</span>
-            <div className="flex h-3 w-32 overflow-hidden rounded-md border border-zinc-300/80 shadow-2xs">
-              {activeMetric === "financial_exclusion_pct" ? (
-                <>
-                  <div className="flex-1 bg-[#ffedd5]" />
-                  <div className="flex-1 bg-[#fdba74]" />
-                  <div className="flex-1 bg-[#ea580c]" />
-                  <div className="flex-1 bg-[#9a3412]" />
-                </>
-              ) : activeMetric === "income_mean" ? (
-                <>
-                  <div className="flex-1 bg-[#dbeafe]" />
-                  <div className="flex-1 bg-[#60a5fa]" />
-                  <div className="flex-1 bg-[#2563eb]" />
-                  <div className="flex-1 bg-[#1e3a8a]" />
-                </>
-              ) : (
-                <>
-                  <div className="flex-1 bg-[#ede9fe]" />
-                  <div className="flex-1 bg-[#a78bfa]" />
-                  <div className="flex-1 bg-[#7c3aed]" />
-                  <div className="flex-1 bg-[#4c1d95]" />
-                </>
-              )}
-            </div>
-            <span className="font-mono text-[11px] font-bold text-zinc-600">{maxVal.toFixed(0)}</span>
+          <div className="flex h-3 w-32 overflow-hidden rounded-md border border-zinc-300/80 shadow-2xs">
+            {(activeMetric === "financial_exclusion_pct"
+              ? ["#ffedd5", "#fdba74", "#ea580c", "#9a3412"]
+              : activeMetric === "income_mean"
+              ? ["#dbeafe", "#60a5fa", "#2563eb", "#1e3a8a"]
+              : ["#ede9fe", "#a78bfa", "#7c3aed", "#4c1d95"]
+            ).map((color) => <div key={color} className="flex-1" style={{ backgroundColor: color }} />)}
           </div>
         </div>
-
         <div className="flex items-center gap-2">
-          {selectedDeptObj ? (
+          {selectedName ? (
             <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50/90 border border-blue-200/80 px-3 py-1.5 text-xs font-semibold text-[#002b7f] shadow-2xs">
               <span className="flex size-1.5 rounded-full bg-[#002b7f]" />
-              <span>{selectedDeptObj.name}</span>
+              <span>{selectedDepartment}</span>
               <button
                 type="button"
                 onClick={() => onSelectDepartment(null)}
@@ -320,12 +273,13 @@ export function SvChoroplethMap({
               </button>
             </div>
           ) : (
-            <span className="font-mono text-zinc-500 text-[11px]">
-              VISTA GLOBAL · 14 DEPARTAMENTOS
-            </span>
+            <span className="font-mono text-zinc-500 text-[11px]">VISTA GLOBAL · 14 DEPARTAMENTOS</span>
           )}
         </div>
       </div>
+      <p className="sr-only">
+        Fuente de las geometrías: Centro Nacional de Registros (CNR), El Salvador. Licencia no declarada en el archivo; verificar procedencia antes de publicación.
+      </p>
     </div>
   );
 }

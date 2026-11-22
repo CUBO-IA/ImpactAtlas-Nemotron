@@ -39,7 +39,7 @@ Hay una aplicación Next.js con pantallas de exploración, comparación, chat y 
 
 **Parcial / no verificado**
 
-- El SVG no es MapLibre. El issue D1-04 está explícitamente sin cerrar; no afirmar que MapLibre esté integrado.
+- El mapa usa MapLibre 6.19 con el GeoJSON local como `source` y un estilo sin tiles ni servicios externos (`components/map/sv-choropleth-map.tsx`). La selección por mapa y la tabla accesible son equivalentes. D1-04 sigue sin cerrar en el plan porque la licencia de las geometrías no está declarada en el GeoJSON.
 - Existe `public/geo/sv-departamentos.geojson` (`FeatureCollection` de 14 features). Verificado localmente: sus `properties.departmentId` coinciden con los 14 IDs de `src/data/audited-catalog.json` y declaran `source: "Centro Nacional de Registros (CNR), El Salvador"`; **no declaran licencia**. El SVG actual no consume el archivo. `docs/data-audit.md` ya refleja este hallazgo.
 - `docs/plan/04-dev1-frontend.md` registra D1-05 y D1-06 como completados con referencias a código/pruebas locales; no se verificó aquí la ejecución actual ni el endpoint de un candidato.
 
@@ -111,7 +111,7 @@ El código contiene límites de runtime en chat y rutas de backend, pero límite
 1. Cerrado el trabajo local sin commit: `7fe3722` agrupa los cambios de chat, PDF, mapa, operación y documentación. Falta la reconciliación con criterios D1/D2 contra un candidato desplegado.
 2. No marcar el chat como resuelto hasta verificar preguntas respaldadas, ambigüedad/abstención, fallos de modelo, seguridad y bypass del flujo anterior.
 3. Mantener búsqueda semántica desactivada hasta documentar procedencia y validar relevancia/compatibilidad de embeddings.
-4. GeoJSON: fuente y correspondencia de 14 features ya verificadas localmente; falta declarar/validar la licencia, consumir el archivo desde la app y decidir/cerrar MapLibre (D1-04).
+4. GeoJSON: fuente y correspondencia de 14 features verificadas; MapLibre ya consume el archivo sin tiles y la coropleta/selección están verificadas en navegador. Falta declarar/validar la licencia de las geometrías para cerrar D1-04.
 5. Cerrar PDF compartido/legibilidad, límites y pruebas restantes; completar regresión E2E.
 6. Elegir y autorizar entorno, asegurar secretos, rol SELECT efectivo, HTTPS/acceso/rate limit, modelo local y runtime PDF; ensayar health, rollback y restauración de forma aislada.
 7. Verificar contra el entorno autorizado sin exponer secretos, filas, prompts personales o embeddings; documentar versión/corte y evidencia no sensible.
