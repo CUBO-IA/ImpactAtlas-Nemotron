@@ -66,7 +66,7 @@ export default function Home() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-lg">
               Explora patrones demográficos, brechas territoriales y aspiraciones
-              de la población salvadoreña a través de cartografía coroplética interactiva, comparativas de precisión y consultas asistidas por el modelo local LFM3.
+              de la población salvadoreña a través de cartografía coroplética interactiva, comparativas de precisión y consultas asistidas por el modelo local Qwen3.5.
             </p>
 
             {/* Action Buttons with Micro-interactions */}
@@ -119,7 +119,7 @@ export default function Home() {
                 <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-blue-50 text-[#002b7f] shadow-2xs">
                   <Database className="size-5" />
                 </div>
-                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">LFM3</div>
+                <div className="text-3xl font-mono font-bold tracking-tight text-zinc-950">Qwen3.5</div>
                 <div className="mt-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
                   Modelo local
                 </div>
@@ -232,7 +232,7 @@ export default function Home() {
                     Chat & Asistente IA
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                    Consultas conversacionales con el modelo local LFM3 sobre la información disponible.
+                    Consultas conversacionales con el modelo local Qwen3.5 sobre la información disponible.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-zinc-100 flex items-center justify-between text-xs font-semibold text-[#002b7f]">

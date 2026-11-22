@@ -27,7 +27,7 @@ type StreamEvent =
 
 async function handleRequest(request: Request, emit?: (event: StreamEvent) => void, callerSignal = request.signal) {
   const requestId = randomUUID();
-  let stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata" | "request" = "request";
+  let stage: "provider-plan" | "statistics" | "compare" | "semantic" | "answer" | "metadata" | "request" = "request";
 
   try {
     return await runChatRequest(async (signal) => {

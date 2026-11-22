@@ -90,7 +90,7 @@ export async function createReportNarrative(
       .flatMap((id) => byId.has(id) ? [byId.get(id)!] : []);
     return paragraphs.length
       ? { paragraphs }
-      : { paragraphs: [], warning: "Análisis IA omitido: LFM3 no seleccionó hechos verificables." };
+      : { paragraphs: [], warning: "Análisis IA omitido: Qwen3.5 no seleccionó hechos verificables." };
   } catch (error) {
     if (signal.aborted) throw signal.reason ?? error;
     return { paragraphs: [], warning: "Análisis IA no disponible; se conserva el reporte estadístico." };

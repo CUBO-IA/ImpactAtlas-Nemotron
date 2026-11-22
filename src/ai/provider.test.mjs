@@ -15,6 +15,10 @@ const validPlan = {
   }],
 };
 
+function permittedOperations(system) {
+  return JSON.parse(system.match(/^Operaciones permitidas: (.+)$/m)[1]);
+}
+
 test("envía historial acotado y filtros en mensajes, y valida el plan generado", async () => {
   let request;
   const model = {};
@@ -24,8 +28,7 @@ test("envía historial acotado y filtros en mensajes, y valida el plan generado"
     generate: async (options) => {
       request = options;
       return {
-        text: "",
-        toolCalls: [{ toolName: "get_statistics", input: validPlan.calls[0].input }],
+        text: JSON.stringify({ calls: validPlan.calls }),
       };
     },
   });
@@ -47,14 +50,34 @@ test("envía historial acotado y filtros en mensajes, y valida el plan generado"
   }
   assert.match(sent, /santa-ana/);
   assert.match(sent, /¿Cuál es el ingreso promedio\?/);
-  assert.deepEqual(Object.keys(request.tools), ["get_statistics"]);
+  assert.equal(Object.hasOwn(request, "tools"), false);
   assert.equal(request.model, model);
-  assert.equal(request.temperature, 0.1);
-  assert.equal(request.maxOutputTokens, 256);
+  assert.equal(request.temperature, 0);
+  assert.equal(request.maxOutputTokens, 384);
   assert.equal(request.maxRetries, 0);
   assert.equal(request.abortSignal instanceof AbortSignal, true);
   assert.deepEqual(plan, validPlan);
   assert.equal(env.allowRemoteModels, false);
+});
+
+test("planifica el salario promedio de La Libertad desde JSON envuelto o array cercado sin añadir ocupación", async () => {
+  const json = JSON.stringify({ calls: validPlan.calls });
+  for (const text of [json, `\`\`\`json\n${JSON.stringify(validPlan.calls)}\n\`\`\``]) {
+    let attempts = 0;
+    const provider = createLocalChatProvider({
+      model: {},
+      generate: async () => {
+        attempts++;
+        return { text };
+      },
+    });
+
+    assert.deepEqual(await provider.plan({
+      question: "¿Cuál es el salario promedio de La Libertad?",
+      filters: { departmentIds: ["la-libertad"] },
+    }), validPlan);
+    assert.equal(attempts, 1);
+  }
 });
 
 test("rechaza tools y argumentos fuera del esquema Zod", async () => {
@@ -86,32 +109,126 @@ test("valida el formato local de tool call generado por LFM3", async () => {
   });
 });
 
-test("ofrece comparación para la pregunta «cómo se comparan»", async () => {
-  let availableTools;
+test("reintenta cuando el modelo describe una herramienta en lugar de ejecutarla", async () => {
+  let attempts = 0;
   const provider = createLocalChatProvider({
     model: {},
-    generate: async (options) => {
-      availableTools = Object.keys(options.tools);
-      return { text: "", toolCalls: [] };
-    },
+    generate: async () => ++attempts === 1
+      ? { text: "Usaré get_statistics con occupationId tecnico. Voy a hacer la llamada:", toolCalls: [] }
+      : { text: JSON.stringify({ calls: validPlan.calls }) },
   });
-  await provider.plan({ question: "¿Cómo se comparan los ingresos entre Santa Ana y San Salvador?" });
-  assert.deepEqual(availableTools, ["compare_departments"]);
+
+  assert.deepEqual(await provider.plan({
+    question: "¿Cuál es el salario promedio de La Libertad?",
+    filters: { departmentIds: ["la-libertad"] },
+  }), validPlan);
+  assert.equal(attempts, 2);
 });
 
-test("usa búsqueda semántica solo para similitud explícita", async () => {
+test("corrige automáticamente argumentos de herramienta inválidos", async () => {
+  for (const invalid of [
+    { departmentIds: ["la-libertad"] },
+    { departmentId: "la-libertad" },
+    { occupationId: "todos" },
+  ]) {
+    let attempts = 0;
+    const provider = createLocalChatProvider({
+      model: {},
+      generate: async (options) => {
+        if (++attempts === 1) {
+          return { text: JSON.stringify({ calls: [{
+            name: "get_statistics",
+            input: { ...validPlan.calls[0].input, ...invalid },
+          }] }) };
+        }
+        assert.match(options.messages.at(-1).content, new RegExp(`Errores de validación:.*${Object.keys(invalid)[0]}`));
+        return { text: JSON.stringify({ calls: validPlan.calls }) };
+      },
+    });
+
+    assert.deepEqual(await provider.plan({
+      question: "¿Cuál es el salario promedio de La Libertad?",
+      filters: { departmentIds: ["la-libertad"] },
+    }), validPlan);
+    assert.equal(attempts, 2);
+  }
+});
+
+test("reintenta si el plan excede una llamada a herramienta", async () => {
+  const call = { toolName: "get_statistics", input: validPlan.calls[0].input };
+  for (const output of [
+    { text: "", toolCalls: [call, call] },
+    { text: JSON.stringify([validPlan.calls[0], validPlan.calls[0]]) },
+  ]) {
+    let attempts = 0;
+    const provider = createLocalChatProvider({
+      model: {},
+      generate: async () => ++attempts === 1
+        ? output
+        : { text: JSON.stringify({ calls: validPlan.calls }) },
+    });
+
+    const plan = await provider.plan({ question: "Consulta estadísticas" });
+    assert.equal(plan.status, "execute");
+    assert.equal(plan.calls.length, 1);
+    assert.equal(attempts, 2);
+  }
+});
+
+test("ofrece estadísticas y comparación sin depender de palabras clave", async () => {
+  const provider = createLocalChatProvider({
+    model: {},
+    generate: async (options) => {
+      const operations = permittedOperations(options.system);
+      assert.deepEqual(operations.map(({ name }) => name), ["get_statistics", "compare_departments"]);
+      const [statistics, comparison] = operations.map(({ inputSchema }) => inputSchema);
+      assert.deepEqual(statistics.required, ["groupBy", "metrics"]);
+      assert.ok(statistics.properties.groupBy.enum.includes("department"));
+      assert.ok(statistics.properties.metrics.items.enum.includes("income_mean"));
+      assert.equal(statistics.additionalProperties, false);
+      for (const key of ["departmentId", "departmentIds", "filters"]) {
+        assert.equal(Object.hasOwn(statistics.properties, key), false);
+      }
+      assert.deepEqual(comparison.required, ["departmentIds", "referenceDepartmentId", "metrics", "breakdowns"]);
+      assert.equal(comparison.properties.departmentIds.type, "array");
+      return { text: JSON.stringify({ calls: [
+        { name: "compare_departments", input: {
+          departmentIds: ["santa-ana", "san-salvador"], referenceDepartmentId: "santa-ana",
+          metrics: ["income_mean"], breakdowns: [],
+        } },
+      ] }) };
+    },
+  });
+  const plan = await provider.plan({ question: "¿Dónde hay mayores ingresos, en Santa Ana o San Salvador, y qué educación tienen?" });
+  assert.deepEqual(plan.calls.map(({ name }) => name), ["compare_departments"]);
+});
+
+test("ofrece solo las dos herramientas agregadas incluso para similitud explícita", async () => {
   let availableTools;
   const provider = createLocalChatProvider({
     model: {},
     generate: async (options) => {
-      availableTools = Object.keys(options.tools);
-      return { text: "", toolCalls: [] };
+      availableTools = permittedOperations(options.system).map(({ name }) => name);
+      return { text: "No hay búsqueda semántica disponible.", toolCalls: [] };
     },
   });
   await provider.plan({ question: "¿Qué categorías similares a técnico aparecen en la muestra?" });
-  assert.deepEqual(availableTools, ["search_semantic_evidence"]);
+  assert.deepEqual(availableTools, ["get_statistics", "compare_departments"]);
   await provider.plan({ question: "Explora los ingresos promedio de Santa Ana" });
-  assert.deepEqual(availableTools, ["get_statistics"]);
+  assert.deepEqual(availableTools, ["get_statistics", "compare_departments"]);
+});
+
+test("rechaza herramientas no expuestas tanto del SDK como de JSON y XML", async () => {
+  const call = { name: "search_semantic_evidence", input: { text: "temas similares", topK: 5 } };
+  for (const output of [
+    { text: "", toolCalls: [{ toolName: call.name, input: call.input }] },
+    { text: JSON.stringify({ calls: [call] }), toolCalls: [] },
+    { text: JSON.stringify([call]) },
+    { text: '<tool_call><function=search_semantic_evidence><parameter=text>temas similares</parameter><parameter=topK>5</parameter></function></tool_call>', toolCalls: [] },
+  ]) {
+    const provider = createLocalChatProvider({ model: {}, generate: async () => output });
+    await assert.rejects(provider.plan({ question: "Busca temas similares" }), InvalidLocalChatPlanError);
+  }
 });
 
 test("descarta desgloses fuera del catálogo sin perder una comparación válida", async () => {

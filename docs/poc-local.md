@@ -4,7 +4,7 @@ Este documento describe el entorno de prueba local. **No es un despliegue public
 
 ## Arranque
 
-Requisitos: Docker + Compose, Node 24, pnpm 12.6 y los archivos ONNX q4 de LFM3 en `./models` (montados solo lectura en el contenedor).
+Requisitos: Docker + Compose, Node 24, pnpm 12.6 y los archivos ONNX q4 de `onnx-community/Qwen3.5-0.8B-ONNX-OPT` en `./models/Qwen3.5-0.8B-ONNX-OPT` (montados solo lectura en el contenedor). `LFM3_MODEL_DIR` conserva su nombre por compatibilidad y apunta al directorio padre de los modelos.
 
 ```bash
 docker compose --profile poc up -d --build

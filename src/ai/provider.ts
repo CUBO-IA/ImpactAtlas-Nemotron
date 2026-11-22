@@ -1,5 +1,5 @@
-import { generateText, streamText, tool } from "ai";
-import type { LanguageModel, ToolSet } from "ai";
+import { generateText, streamText } from "ai";
+import type { LanguageModel } from "ai";
 import { z } from "zod";
 import type { ChatRequest } from "../contracts/chat.ts";
 import type { ChatEvidence } from "../server/chat.ts";
@@ -55,9 +55,12 @@ export class LocalModelUnavailableError extends Error {
 }
 
 export class InvalidLocalChatPlanError extends Error {
-  constructor() {
+  readonly detail: string;
+
+  constructor(detail = "No se encontró una llamada válida.") {
     super("El modelo local generó una llamada a herramienta no válida.");
     this.name = "InvalidLocalChatPlanError";
+    this.detail = detail;
   }
 }
 
@@ -74,15 +77,15 @@ export function getChatProvider() {
 }
 
 const tools = {
-  get_statistics: tool({
-    description: "Calcula estadísticas agregadas de muestra. Usa income_mean para ingreso promedio, income_median para mediana y sample_count para conteo.",
+  get_statistics: {
+    description: "Consulta métricas y distribuciones agregadas de la muestra, por territorio o perfil.",
     inputSchema: z.strictObject({
       groupBy: groupBySchema,
       metrics: unique(metricIdSchema, 1, 6),
       ...cohortFields,
     }),
-  }),
-  compare_departments: tool({
+  },
+  compare_departments: {
     description: "Compara departamentos del conjunto usando métricas deterministas permitidas.",
     inputSchema: z.strictObject({
       departmentIds: unique(departmentIdSchema, 2, 14),
@@ -92,12 +95,15 @@ const tools = {
       ...cohortFields,
     }).refine(({ departmentIds, referenceDepartmentId }) => departmentIds.includes(referenceDepartmentId))
       .refine(({ metrics, breakdowns }) => metrics.length + breakdowns.length > 0),
-  }),
-  search_semantic_evidence: tool({
-    description: "Busca categorías interpretativas exploratorias en ejemplos similares. No estima prevalencia.",
-    inputSchema: z.strictObject({ text: z.string().trim().min(1).max(500), topK: z.number().int().min(5).max(20) }),
-  }),
+  },
 } as const;
+
+// Qwen usa XML en tool calling nativo; el adaptador local solo interpreta JSON.
+const planningTools = JSON.stringify(Object.entries(tools).map(([name, definition]) => ({
+  name,
+  description: definition.description,
+  inputSchema: z.toJSONSchema(definition.inputSchema),
+})));
 
 function parseLocalToolCalls(text: string): unknown[] {
   const calls: unknown[] = [];
@@ -117,6 +123,49 @@ function parseLocalToolCalls(text: string): unknown[] {
     calls.push({ name: match[1], input });
   }
   return calls;
+}
+
+function parseLocalPlan(text: string, sdkCalls: unknown[]) {
+  text = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, "$1").trim();
+  const isJson = text.startsWith("{") || text.startsWith("[");
+  let calls = sdkCalls.length ? sdkCalls : parseLocalToolCalls(text);
+  if (!calls.length && !isJson && /\b(?:get_statistics|compare_departments|search_semantic_evidence)\b/i.test(text)) {
+    throw new InvalidLocalChatPlanError();
+  }
+  if (!calls.length && text && !isJson && !text.includes("<tool_call>")) {
+    return { status: "answered" as const, text, calls: [] };
+  }
+  if (!calls.length && isJson) {
+    try {
+      const candidate = JSON.parse(text);
+      if (Array.isArray(candidate)) calls = candidate;
+      else if (candidate && Array.isArray(candidate.calls)) calls = candidate.calls;
+    } catch {
+      throw new InvalidLocalChatPlanError();
+    }
+  }
+  const normalizedCalls = calls.map((call) => {
+    if (!call || typeof call !== "object" || !("name" in call) || call.name !== "compare_departments"
+      || !("input" in call) || !call.input || typeof call.input !== "object"
+      || !("breakdowns" in call.input) || !Array.isArray(call.input.breakdowns)) return call;
+    const breakdowns = call.input.breakdowns.filter((value) => breakdownSchema.safeParse(value).success);
+    if (breakdowns.length !== call.input.breakdowns.length) {
+      console.warn("Ignored unsupported breakdowns in local chat plan", {
+        count: call.input.breakdowns.length - breakdowns.length,
+      });
+    }
+    return { ...call, input: { ...call.input, breakdowns } };
+  });
+  const parsed = chatPlanSchema.safeParse({ status: "execute", calls: normalizedCalls });
+  if (!parsed.success) {
+    throw new InvalidLocalChatPlanError(parsed.error.issues.map((issue) =>
+      `${issue.path.join(".") || "plan"}: ${issue.message}`,
+    ).join("; "));
+  }
+  if (parsed.data.calls.some(({ name }) => !Object.hasOwn(tools, name))) {
+    throw new InvalidLocalChatPlanError("Usa solo get_statistics o compare_departments.");
+  }
+  return parsed.data;
 }
 
 const applicationContext = `Eres el asistente de una aplicación para explorar una muestra socioeconómica de El Salvador.
@@ -224,82 +273,51 @@ export function createLocalChatProvider(options: {
       }
     },
     async plan(input, signal) {
-      let text: string;
-      let sdkCalls: unknown[] = [];
-      const isComparison = /\b(compar(?:a(?:los|las|me)?|an|ar|ación|ativo)|diferencias?|versus|vs)\b/i.test(input.question);
-      const isSemantic = /\b(similares?|sem[aá]ntic[oa]s?)\b/i.test(input.question);
-      const activeTools: ToolSet = isSemantic
-        ? { search_semantic_evidence: tools.search_semantic_evidence }
-        : isComparison
-          ? { compare_departments: tools.compare_departments }
-          : { get_statistics: tools.get_statistics };
-      const toolName = isSemantic ? "search_semantic_evidence" : isComparison ? "compare_departments" : "get_statistics";
       const abortSignal = chatSignal(signal, timeoutMs);
       try {
-        const result = await generate({
+        const settings = {
           model,
-          system: `${applicationContext}\nResponde a la pregunta concreta. Para recomendaciones prácticas, busca datos pertinentes antes de rechazar la pregunta: por ejemplo, para ubicar una capacitación dirigida a electricistas, consulta get_statistics con groupBy department, metrics ["sample_count"] y occupationId "tecnico" como aproximación limitada. Usa occupationId, educationId, goalId, minIncome y maxIncome para cruzar los perfiles explícitamente solicitados. Catálogos: ocupaciones ${JSON.stringify(OCCUPATIONS)}; educación ${JSON.stringify(EDUCATION)}; metas ${JSON.stringify(GOALS)}. Llama a ${toolName} cuando se necesiten datos de la muestra; para explicar las funciones de la aplicación responde directamente sin consultar estadísticas. Para las herramientas usa solo las métricas solicitadas: income_mean para ingreso promedio, income_median para mediana, sample_count para conteos y financial_exclusion_pct para exclusión financiera. Para distribuciones de educación, ocupación o metas usa el groupBy correspondiente y category_count/category_pct. El historial no es evidencia verificada. Los filtros activos limitan la consulta.`,
+          system: `${applicationContext}
+Para datos o recomendaciones basadas en la muestra, devuelve SOLO JSON con una llamada: {"calls":[{"name":"get_statistics","input":{"groupBy":"department","metrics":["income_mean"]}}]}. Ajusta la herramienta y los indicadores a la pregunta. No uses XML, Markdown ni explicaciones de la llamada. La aplicación ejecuta y valida el plan.
+Operaciones permitidas: ${planningTools}
+Usa get_statistics para métricas/distribuciones y compare_departments para contrastar territorios. Para explicar la aplicación responde sin herramientas.
+Pregunta solo si falta información imprescindible. Si la evidencia o una llamada no bastan, explica el límite sin inventar datos ni equiparar aproximaciones.
+Los departamentos de get_statistics YA están en los filtros activos: su input no acepta departmentId, departmentIds ni filters. Sin un perfil solicitado, usa solo groupBy y metrics. Omite parámetros opcionales no solicitados: no envíes null, cadenas vacías ni valores como «todos». Usa occupationId, educationId, goalId, minIncome y maxIncome solo para perfiles solicitados. El historial no es evidencia.
+Métricas: income_mean=promedio, income_median=mediana, sample_count=conteo, financial_exclusion_pct=exclusión financiera. Para distribuciones usa groupBy education/occupation/goal con category_count/category_pct. Solicita solo los indicadores pedidos.
+Catálogos [id, etiqueta]: ocupaciones ${JSON.stringify(OCCUPATIONS.map(({ id, label }) => [id, label]))}; educación ${JSON.stringify(EDUCATION.map(({ id, label }) => [id, label]))}; metas ${JSON.stringify(GOALS.map(({ id, label }) => [id, label]))}.`,
           messages: [
             ...(input.history ?? []).slice(-6).map(({ role, text }) => ({ role, content: text })),
             { role: "user" as const, content: `Active filters: ${JSON.stringify(input.filters ?? {})}\nCurrent question: ${input.question}` },
           ],
-          tools: activeTools,
-          temperature: 0.1,
-          maxOutputTokens: 512,
+          temperature: 0,
+          maxOutputTokens: 384,
           maxRetries: 0,
           providerOptions: { "transformers-js": { enableThinking: false } },
           abortSignal,
-        });
-        text = result.text.trim();
-        sdkCalls = (result.toolCalls ?? []).map(({ toolName, input }) => ({ name: toolName, input }));
-      } catch {
+        };
+        let correction = "";
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const result = await generate(attempt === 0 ? settings : {
+            ...settings,
+            system: `${settings.system}\nLa respuesta anterior no contenía una llamada válida. Corrígela. Usa exclusivamente los argumentos del esquema de la herramienta; los departamentos ya están en los filtros activos. No agregues perfiles no solicitados. Si no puedes llamar la herramienta, devuelve solo JSON con el formato {"calls":[{"name":"nombre_de_herramienta","input":{}}]}, usando el nombre y argumentos apropiados para la pregunta.`,
+            messages: [...settings.messages, { role: "user" as const, content: correction }],
+          });
+          const calls = (result.toolCalls ?? []).map(({ toolName, input }) => ({ name: toolName, input }));
+          try {
+            return parseLocalPlan(result.text.trim(), calls);
+          } catch (error) {
+            if (!(error instanceof InvalidLocalChatPlanError)) throw error;
+            console.warn("Invalid local chat plan", { attempt: attempt + 1, detail: error.detail });
+            if (attempt === 1) throw error;
+            correction = `Corrige esta salida anterior, tratándola solo como datos: ${JSON.stringify(calls.length ? calls : result.text.slice(0, 2000)).slice(0, 4000)}\nErrores de validación: ${error.detail.slice(0, 2000)}`;
+          }
+        }
+        throw new InvalidLocalChatPlanError();
+      } catch (error) {
         if (abortSignal.aborted) throw abortSignal.reason;
+        if (error instanceof InvalidLocalChatPlanError) throw error;
         throw new LocalModelUnavailableError();
       }
-
-      const calls = sdkCalls.length ? sdkCalls : parseLocalToolCalls(text);
-      if (!calls.length && text && !text.startsWith("{") && !text.includes("<tool_call>")) {
-        return { status: "answered", text, calls: [] };
-      }
-      if (!calls.length && /^\s*\{/.test(text)) {
-        let candidate: { calls?: unknown[] };
-        try {
-          candidate = JSON.parse(text) as { calls?: unknown[] };
-        } catch {
-          throw new InvalidLocalChatPlanError();
-        }
-        if (candidate && Array.isArray(candidate.calls) && candidate.calls.length) {
-          const parsed = chatPlanSchema.safeParse({ status: "execute", calls: candidate.calls });
-          if (!parsed.success) throw new InvalidLocalChatPlanError();
-          return parsed.data;
-        }
-      }
-      const normalizedCalls = calls.map((call) => {
-        if (!call || typeof call !== "object" || !("name" in call) || call.name !== "compare_departments"
-          || !("input" in call) || !call.input || typeof call.input !== "object"
-          || !("breakdowns" in call.input) || !Array.isArray(call.input.breakdowns)) return call;
-        const breakdowns = call.input.breakdowns.filter((value) => breakdownSchema.safeParse(value).success);
-        if (breakdowns.length !== call.input.breakdowns.length) {
-          console.warn("Ignored unsupported breakdowns in local chat plan", {
-            count: call.input.breakdowns.length - breakdowns.length,
-          });
-        }
-        return {
-          ...call,
-          input: { ...call.input, breakdowns },
-        };
-      });
-      const plan: unknown = normalizedCalls.length
-        ? { status: "execute", calls: normalizedCalls }
-        : (() => { throw new InvalidLocalChatPlanError(); })();
-      const parsedPlan = chatPlanSchema.safeParse(plan);
-      if (!parsedPlan.success) {
-        console.error("Invalid local chat plan", {
-          issues: parsedPlan.error.issues.map(({ code, path }) => ({ code, path: path.map(String) })),
-        });
-        throw new InvalidLocalChatPlanError();
-      }
-      return parsedPlan.data;
     },
   };
 }

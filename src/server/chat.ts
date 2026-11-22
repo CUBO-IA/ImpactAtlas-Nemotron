@@ -263,7 +263,7 @@ export function createChatOrchestrator(
   dependencies: {
     provider: NonNullable<ReturnType<typeof getChatProvider>>;
     services: ChatServices;
-    onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void;
+    onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "answer" | "metadata") => void;
     onBlock?: (block: ChatData["blocks"][number]) => void;
     onText?: (text: string) => void;
   },
@@ -346,6 +346,7 @@ export function createChatOrchestrator(
         : call.name === "compare_departments" ? "compare" : "semantic");
       evidence.push(await executeTool(call, scopedRequest, dependencies.services, `ev-${index + 1}`));
     }
+    dependencies.onStage?.("answer");
     const blocks = await buildBlocks(evidence, request, dependencies.provider, signal, dependencies.onBlock, dependencies.onText);
     if (!blocks.length) {
       return {
@@ -375,7 +376,7 @@ export async function handleChat(
   request: ChatRequest,
   requestId: string,
   callerSignal?: AbortSignal,
-  onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "metadata") => void,
+  onStage?: (stage: "provider-plan" | "statistics" | "compare" | "semantic" | "answer" | "metadata") => void,
   onBlock?: (block: ChatData["blocks"][number]) => void,
   onText?: (text: string) => void,
 ): Promise<ChatResponse> {

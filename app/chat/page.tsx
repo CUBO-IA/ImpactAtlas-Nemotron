@@ -51,7 +51,7 @@ function ChatContent() {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [stage, setStage] = useState("");
+  const [activity, setActivity] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Initial greeting
@@ -100,7 +100,7 @@ function ChatContent() {
 
       setMessages(nextMessages);
       setLoading(true);
-      setStage("Preparando consulta...");
+      setActivity([]);
       setError(null);
 
       // Prepare conversation history (max 10, user and assistant only)
@@ -124,6 +124,7 @@ function ChatContent() {
       abortControllerRef.current = controller;
       const assistantId = `asst-${userMsgId}`;
       let completed = false;
+      const steps: string[] = [];
 
       try {
         const res = await fetch("/api/chat", {
@@ -157,13 +158,15 @@ function ChatContent() {
             const event = JSON.parse(line);
             if (event.type === "stage") {
               const labels: Record<string, string> = {
-                "provider-plan": "Interpretando tu pregunta...",
-                statistics: "Consultando estadísticas...",
-                compare: "Comparando departamentos...",
-                semantic: "Consultando similitudes...",
-                metadata: "Preparando la evidencia...",
+                "provider-plan": "Interpretando la pregunta y seleccionando herramientas",
+                statistics: "Herramienta: estadísticas",
+                compare: "Herramienta: comparación de departamentos",
+                semantic: "Herramienta: búsqueda por similitud",
+                answer: "Revisando la evidencia y preparando la respuesta",
+                metadata: "Preparando información de la consulta",
               };
-              setStage(labels[event.stage] ?? "Procesando consulta...");
+              steps.push(labels[event.stage] ?? "Procesando consulta");
+              setActivity([...steps]);
             } else if (event.type === "text") {
               setMessages((prev) => {
                 const existing = prev.find((message) => message.id === assistantId);
@@ -193,7 +196,7 @@ function ChatContent() {
               const json: ChatResponse = event.data;
               completed = true;
               setMessages((prev) => [...prev.filter((message) => message.id !== assistantId), {
-                id: assistantId, role: "assistant", timestamp, data: json.data, meta: json.meta,
+                id: assistantId, role: "assistant", timestamp, data: json.data, meta: json.meta, activity: [...steps],
               }]);
             } else if (event.type === "error") {
               throw new Error(event.error.message);
@@ -269,7 +272,7 @@ function ChatContent() {
 
         {/* Message Thread */}
         <div>
-          <ChatMessageList messages={messages} loading={loading} stage={stage} />
+          <ChatMessageList messages={messages} loading={loading} activity={activity} />
         </div>
 
         {/* Error Alert */}

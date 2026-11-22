@@ -48,6 +48,6 @@ export const chatPlanSchema = z.discriminatedUnion("status", [
   }),
   z.strictObject({
     status: z.literal("execute"),
-    calls: z.array(z.discriminatedUnion("name", [statsCall, compareCall, semanticCall])).min(1).max(4),
+    calls: z.array(z.discriminatedUnion("name", [statsCall, compareCall, semanticCall])).min(1).max(1),
   }),
 ]);

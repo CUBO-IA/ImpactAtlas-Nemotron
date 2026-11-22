@@ -17,7 +17,7 @@ No se ha accedido a servidores ni se han cambiado bases de datos.
 | Aplicación (D2-16) | Aplicación Next.js con `Dockerfile` y servicio `app` en Compose bajo el perfil `poc`, verificados en local (`docs/poc-local.md`); no hay manifiesto/topología de despliegue publicado. | Elegir entorno y responsable de operación; autorizar publicación y fijar versión de Node/runtime compatibles. |
 | Datos | Compose expone PostgreSQL local en `5432`; valores por defecto de usuario/contraseña son de desarrollo. `DATABASE_URL` es requerida por el cliente. | Obtener autorización del propietario de los datos para BD/corte candidatos, conectividad y credenciales de mínimo privilegio. No usar los valores locales en un entorno compartido. |
 | Búsqueda semántica | El código tiene una compuerta que exige `SEMANTIC_SEARCH_ENABLED=true` y `SEMANTIC_SEARCH_AUDIT=confirmed`, consulta local y publicación agregada con mínimo `k=5`; por defecto se abstiene. Esto no acredita procedencia ni compatibilidad de los embeddings almacenados. La semántica no se activó en el POC local. | No habilitar hasta documentar modelo/revisión, `pooling` y prefijo de la ingesta, distancia y compatibilidad, y validar relevancia con criterios y resultados revisados; detalle en `docs/implementation-inventory.md` (`Semántica`). Dimensión/norma no bastan. |
-| IA local | Decisión del proyecto: LFM3 vía `@browser-ai/transformers-js`, CPU q4, con `LFM3_MODEL_DIR` (por defecto `models`); no usar API externa/OpenAI. El POC local sí cargó el modelo y respondió en `/api/chat` (`docs/poc-local.md`). | Confirmar archivos completos/compatibles del modelo en la ruta configurada, espacio en disco, memoria y CPU suficientes **en el candidato de despliegue**; la carga local no dimensiona ese entorno. |
+| IA local | Qwen3.5-0.8B-ONNX-OPT vía `@browser-ai/transformers-js`, CPU q4, con `LFM3_MODEL_DIR` (por defecto `models`); no usar API externa/OpenAI. El POC histórico de `docs/poc-local.md` utilizó LFM3 y no valida Qwen. | Confirmar archivos completos/compatibles del modelo en la ruta configurada, espacio en disco, memoria y CPU suficientes **en el candidato de despliegue**. |
 | Seguridad de acceso | No hay configuración versionada de HTTPS, control de acceso ni limitación de solicitudes. | Acordar identidad/grupo piloto, gateway TLS, límites y política de exposición con el responsable de seguridad/infraestructura. |
 | Salud y observabilidad | Compose tiene healthcheck únicamente para PostgreSQL; el POC registró `GET /api/health` 200 en local, pero no hay healthcheck de contenedor ni configuración de logs estructurados/correlación. | Definir endpoint/monitorización, retención y redacción; verificar que `requestId` se propaga antes de declarar listo. |
 | Medición (D2-17) | No hay resultados p50/p95, carga ni planes registrados aquí. | Medir en entorno autorizado; documentar muestra, concurrencia, versiones, corte, filtros y resultados antes de optimizar. |
@@ -27,6 +27,16 @@ No se ha accedido a servidores ni se han cambiado bases de datos.
 datos/corte, acceso y secretos. No ejecutar migraciones, importaciones, DDL,
 restauraciones ni pruebas de carga contra una BD compartida o productiva sin
 aprobación y ventana documentadas.
+
+### Planificación del chat local
+
+El modelo propone JSON para `get_statistics` o `compare_departments`; el servidor
+valida y ejecuta como máximo una llamada. Se aceptan `{ "calls": [...] }` y el
+arreglo directo, también dentro de un bloque Markdown JSON. No se usa tool calling
+nativo: Qwen genera XML que el adaptador instalado no interpreta correctamente.
+Los filtros territoriales se aplican en el servidor; no se descartan argumentos
+inválidos para forzar una respuesta. En streaming, HTTP 200 abre el canal:
+un evento `error` sigue indicando una consulta fallida.
 
 ## D2-16 — Preparación de release
 
@@ -46,8 +56,8 @@ aprobación y ventana documentadas.
 4. Construir y desplegar un artefacto identificado por commit. Confirmar
    explícitamente que el build/startup no importa datos, aplica migraciones ni
    requiere descargar el modelo al atender la primera solicitud. Configurar
-   `LFM3_MODEL_DIR` y asegurar que los archivos locales requeridos por LFM3
-   estén disponibles en esa ruta, sin incluirlos en una imagen o artefacto
+   `LFM3_MODEL_DIR` y asegurar que los archivos locales de Qwen3.5 estén
+   disponibles en su subdirectorio, sin incluirlos en una imagen o artefacto
    salvo que el entorno lo permita y se haya aprobado su tamaño/licencia.
    Reservar recursos locales para inferencia CPU q4 (memoria, CPU y disco);
    dimensionarlos mediante medición en el host candidato, no por suposición.
@@ -68,7 +78,7 @@ topología de producción ni un procedimiento para conectar una aplicación exte
 Hacer la prueba únicamente con autorización y carga/datos adecuados al entorno;
 preferir fixture sintética o réplica aislada. Registrar antes de medir:
 
-- commit/artefacto, runtime, configuración, versión/archivos locales de LFM3,
+- commit/artefacto, runtime, configuración, versión/archivos locales de Qwen3.5,
   `LFM3_MODEL_DIR`, modalidad CPU q4 y corte de datos;
 - entorno, tamaño de muestra, duración, concurrencia y calentamiento;
 - consultas y filtros selectivos, incluidos los 14 departamentos y recorridos

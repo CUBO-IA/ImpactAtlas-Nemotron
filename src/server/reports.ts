@@ -357,7 +357,7 @@ function renderHtml(
     <h2>Filtros aplicados</h2><ul>${filters}</ul>
     <h2>Indicadores</h2><ul>${indicators}</ul>
     ${request.sections.includes("ai_analysis") && narrative?.paragraphs.length
-      ? `<h2>Análisis asistido por LFM3 local</h2>${narrative.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}`
+      ? `<h2>Análisis asistido por Qwen3.5 local</h2>${narrative.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("")}`
       : ""}
     <h2>Advertencias</h2><ul>${warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("") || "<li>Sin advertencias</li>"}</ul>
     <h2>Limitaciones</h2><p>Muestra descriptiva, no necesariamente representativa de El Salvador. Los ingresos son estimados; asociaciones no implican causalidad.</p>`;

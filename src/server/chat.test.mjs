@@ -17,6 +17,8 @@ test("transmite texto antes de completar la respuesta y conserva el bloque final
   let received;
   const firstChunk = new Promise((resolve) => { received = resolve; });
   const chunks = [];
+  const stages = [];
+  deps.onStage = (stage) => stages.push(stage);
   deps.onText = (text) => { chunks.push(text); received(); };
   deps.provider.answer = async (_input, _signal, onText) => {
     onText("Primera ");
@@ -27,6 +29,7 @@ test("transmite texto antes de completar la respuesta y conserva el bloque final
   const response = createChatOrchestrator(deps)(request);
   await firstChunk;
   assert.deepEqual(chunks, ["Primera "]);
+  assert.deepEqual(stages, ["provider-plan", "statistics", "answer"]);
   finish();
   const result = await response;
   assert.deepEqual(chunks, ["Primera ", "parte"]);

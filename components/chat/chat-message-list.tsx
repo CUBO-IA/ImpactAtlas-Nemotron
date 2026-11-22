@@ -24,6 +24,7 @@ export interface Message {
   text?: string;
   data?: ChatResponse["data"];
   meta?: ChatResponse["meta"];
+  activity?: string[];
   timestamp: string;
 }
 
@@ -74,10 +75,10 @@ function formatCell(cell: TableCell, unit: string, withUnit: boolean): string {
 interface ChatMessageListProps {
   messages: Message[];
   loading: boolean;
-  stage: string;
+  activity: string[];
 }
 
-export function ChatMessageList({ messages, loading, stage }: ChatMessageListProps) {
+export function ChatMessageList({ messages, loading, activity }: ChatMessageListProps) {
   const [openEvidence, setOpenEvidence] = useState<Record<string, boolean>>({});
 
   function toggleEvidence(msgId: string) {
@@ -227,6 +228,15 @@ export function ChatMessageList({ messages, loading, stage }: ChatMessageListPro
                 </p>
               )}
 
+              {!!msg.activity?.length && (
+                <details className="rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                  <summary className="cursor-pointer font-semibold text-[#002b7f]">Ver actividad de la consulta</summary>
+                  <ol className="mt-2 space-y-1.5">
+                    {msg.activity.map((step, index) => <li key={index}>✓ {step}</li>)}
+                  </ol>
+                </details>
+              )}
+
               {/* Evidence Accordion */}
               {data.evidence.length > 0 && (
                 <div className="pt-2 border-t border-zinc-100">
@@ -312,8 +322,13 @@ export function ChatMessageList({ messages, loading, stage }: ChatMessageListPro
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#002b7f]">
               <span className="size-2 rounded-full bg-[#002b7f] animate-ping" />
-              {stage || "Procesando consulta..."}
+              {activity.at(-1) ?? "Preparando consulta..."}
             </div>
+            {activity.length > 1 && (
+              <ol className="mt-3 space-y-1.5 text-xs text-zinc-500" aria-label="Actividad anterior">
+                {activity.slice(0, -1).map((step, index) => <li key={index}>✓ {step}</li>)}
+              </ol>
+            )}
           </div>
         </div>
       )}
