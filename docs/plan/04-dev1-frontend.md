@@ -150,6 +150,12 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 - Smoke test contra URL desplegada comprueba mapa, comparación, chat y descarga real.
 - No fixtures habilitados ni mensajes que atribuyan representatividad nacional.
 
+## Evidencia local adicional (2026-11-22)
+
+- **PDF (agente de PDF, POC Docker con `POC_PORT=3001`):** `GET /api/health` 200; PDF completo (resumen, educación, ocupación y metas) 200, 69,638 B, 5 páginas A4, gráficos y acentos legibles, ocupación con 15 categorías paginadas 10+5. Variantes `n=18` y `n=0`: 200, 5 páginas, supresión y vacío visibles, `n` coincide con estadísticas. Payload inválido: 400 con JSON. Descarga real desde la UI: 200 y «Descarga iniciada». Artefactos en `/tmp/opencode/` (`report-full.pdf`, `report-narrow.pdf`, `report-empty.pdf`, `report-page-1.png` … `report-page-5.png`); detalle en `docs/poc-local.md`.
+- **Chat (hilo principal, navegador `Nextdev:3000`, servidor de desarrollo):** el saludo exacto de la captura responde capacidades sin tablas; la pregunta de ingreso en Santa Ana responde en prosa con la cifra SQL de 521.45 USD estimados y sin tabla, tras corregir el ámbito que antes devolvía otros departamentos. Lint scoped, `tsc` y `pnpm build` pasaron: comprobaciones de código, no aceptación de despliegue.
+- **Límites:** los paneles mixtos no están expuestos por la API actual (solo `records`), por lo que no se verificó su legibilidad. La tabla `followup` sigue en verificación y no se registra como hecha. Esta evidencia no cierra D1-14, D1-15 ni la validación nueva de chat; D1-17 continúa pendiente.
+
 ## 3. Checklist de seguimiento
 
 Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
@@ -167,8 +173,8 @@ Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
 - [x] D1-11 — Bloques y evidencias — Evidencia: components/chat/chat-message-list.tsx con bloques de texto, tabla, gráficos y trazabilidad.
 - [x] D1-12 — Fallos y abstención — Evidencia: src/contracts/fase4.test.mjs (4/4 pasados).
 - [x] D1-13 — Configuración y descarga PDF — Evidencia: components/reports/report-configurator.tsx con descarga binaria y revokeObjectURL.
-- [ ] D1-14 — Gráficos compartidos SSR — Avance: chat y PDF local usan `ChartSpec` y formato de valores compartido; SSR separa hasta dos unidades en paneles y rechaza más de dos. El flujo PDF actual genera una serie de registros; falta verificar la legibilidad de paneles mixtos y cerrar el issue.
-- [ ] D1-15 — Pruebas de reportes — Avance: `src/contracts/fase5.test.mjs` pasó 3/3 con servidor local y se descargó un PDF desde la interfaz; una fixture sintética de 20 categorías verificó tablas continuadas, nulos y supresión tras corregir el recorte. Pendiente cierre y revisión de los criterios restantes del issue.
+- [ ] D1-14 — Gráficos compartidos SSR — Avance: chat y PDF local usan `ChartSpec` y formato de valores compartido; SSR separa hasta dos unidades en paneles y rechaza más de dos. El flujo PDF actual genera una serie de registros (`records`); la API no expone paneles mixtos, así que no se verificó su legibilidad. Falta cerrar el issue.
+- [ ] D1-15 — Pruebas de reportes — Avance: `src/contracts/fase5.test.mjs` pasó 3/3 con servidor local y se descargó un PDF desde la interfaz; una fixture sintética de 20 categorías verificó tablas continuadas, nulos y supresión tras corregir el recorte. Evidencia nueva del POC Docker: PDF real de 5 páginas A4 con secciones completas, acentos/gráficos legibles, ocupación de 15 categorías paginadas 10+5, variantes `n=18`/`n=0` con supresión/vacío y `n` según estadísticas, payload inválido 400 JSON y descarga UI 200 con «Descarga iniciada». Pendiente cierre y revisión de los criterios restantes, incluidos paneles mixtos no expuestos por la API.
 - [x] D1-16 — Accesibilidad/rendimiento — Evidencia: tabla alternativa navegable por teclado con roles ARIA y selección equivalente a la del mapa MapLibre.
 - [ ] D1-17 — Regresión E2E — Pendiente: no se encontró evidencia de una suite E2E de 20 pruebas ni resultados de ejecución contra el candidato.
 - [x] D1-18 — Correcciones y guía — Evidencia: interfaz pulida, sin referencias de asignación y compilación de producción exitosa.

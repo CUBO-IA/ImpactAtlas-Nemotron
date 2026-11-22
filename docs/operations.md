@@ -3,21 +3,23 @@
 Este documento es un runbook de preparación para un entorno publicado, no
 evidencia de que exista uno. El entorno de prueba es local (`docs/poc-local.md`):
 no requiere HTTPS, autenticación del piloto ni rate limit porque no expone
-servicios fuera del host; eso no cubre los criterios de publicación listados aquí. El repositorio solo define PostgreSQL local en
-`docker-compose.yml`; no configura un servicio de aplicación, gateway HTTPS,
-autenticación del piloto, rate limit, monitorización ni copias automáticas.
+servicios fuera del host; eso no cubre los criterios de publicación listados aquí.
+El repositorio define `Dockerfile` y, en `docker-compose.yml`, PostgreSQL local
+más el servicio `app` bajo el perfil `poc`, que escucha en `127.0.0.1` solo para
+prueba local. No configura un despliegue publicado, gateway HTTPS, autenticación
+del piloto, rate limit, monitorización ni copias automáticas.
 No se ha accedido a servidores ni se han cambiado bases de datos.
 
 ## Estado y bloqueos antes de operar
 
 | Área | Estado comprobable en el repositorio | Pendiente para cerrar |
 | --- | --- | --- |
-| Aplicación (D2-16) | Aplicación Next.js; no hay manifiesto de despliegue/servicio de aplicación. | Elegir entorno y responsable de operación; autorizar publicación y fijar versión de Node/runtime compatibles. |
+| Aplicación (D2-16) | Aplicación Next.js con `Dockerfile` y servicio `app` en Compose bajo el perfil `poc`, verificados en local (`docs/poc-local.md`); no hay manifiesto/topología de despliegue publicado. | Elegir entorno y responsable de operación; autorizar publicación y fijar versión de Node/runtime compatibles. |
 | Datos | Compose expone PostgreSQL local en `5432`; valores por defecto de usuario/contraseña son de desarrollo. `DATABASE_URL` es requerida por el cliente. | Obtener autorización del propietario de los datos para BD/corte candidatos, conectividad y credenciales de mínimo privilegio. No usar los valores locales en un entorno compartido. |
-| Búsqueda semántica | El código tiene una compuerta que exige `SEMANTIC_SEARCH_ENABLED=true` y `SEMANTIC_SEARCH_AUDIT=confirmed`, consulta local y publicación agregada con mínimo `k=5`; por defecto se abstiene. Esto no acredita procedencia ni compatibilidad de los embeddings almacenados. | No habilitar hasta documentar modelo/revisión, pooling y prefijo de los vectores de ingesta, y validar consultas frente a ellos con criterios y resultados revisados. Dimensión/norma no bastan. |
-| IA local | Decisión del proyecto: LFM3 vía `@browser-ai/transformers-js`, CPU q4, con `LFM3_MODEL_DIR` (por defecto `models`); no usar API externa/OpenAI. | Confirmar archivos completos/compatibles del modelo en la ruta configurada, espacio en disco, memoria y CPU suficientes en el entorno. No se verificó su disponibilidad ni carga. |
+| Búsqueda semántica | El código tiene una compuerta que exige `SEMANTIC_SEARCH_ENABLED=true` y `SEMANTIC_SEARCH_AUDIT=confirmed`, consulta local y publicación agregada con mínimo `k=5`; por defecto se abstiene. Esto no acredita procedencia ni compatibilidad de los embeddings almacenados. La semántica no se activó en el POC local. | No habilitar hasta documentar modelo/revisión, `pooling` y prefijo de la ingesta, distancia y compatibilidad, y validar relevancia con criterios y resultados revisados; detalle en `docs/implementation-inventory.md` (`Semántica`). Dimensión/norma no bastan. |
+| IA local | Decisión del proyecto: LFM3 vía `@browser-ai/transformers-js`, CPU q4, con `LFM3_MODEL_DIR` (por defecto `models`); no usar API externa/OpenAI. El POC local sí cargó el modelo y respondió en `/api/chat` (`docs/poc-local.md`). | Confirmar archivos completos/compatibles del modelo en la ruta configurada, espacio en disco, memoria y CPU suficientes **en el candidato de despliegue**; la carga local no dimensiona ese entorno. |
 | Seguridad de acceso | No hay configuración versionada de HTTPS, control de acceso ni limitación de solicitudes. | Acordar identidad/grupo piloto, gateway TLS, límites y política de exposición con el responsable de seguridad/infraestructura. |
-| Salud y observabilidad | Compose tiene healthcheck únicamente para PostgreSQL; no se encontró healthcheck de aplicación ni configuración de logs estructurados/correlación. | Definir endpoint/monitorización, retención y redacción; verificar que `requestId` se propaga antes de declarar listo. |
+| Salud y observabilidad | Compose tiene healthcheck únicamente para PostgreSQL; el POC registró `GET /api/health` 200 en local, pero no hay healthcheck de contenedor ni configuración de logs estructurados/correlación. | Definir endpoint/monitorización, retención y redacción; verificar que `requestId` se propaga antes de declarar listo. |
 | Medición (D2-17) | No hay resultados p50/p95, carga ni planes registrados aquí. | Medir en entorno autorizado; documentar muestra, concurrencia, versiones, corte, filtros y resultados antes de optimizar. |
 | Recuperación (D2-18) | README describe una instantánea versionada fechada 2026-11-21 y restauración manual en una BD vacía. | Acordar backup vigente, destino aislado, permisos y ventana. La instantánea versionada no prueba que haya backups posteriores ni que una restauración se haya ensayado. |
 
@@ -54,11 +56,12 @@ aprobación y ventana documentadas.
    Verificar salud, control de acceso, límites y correlación por `requestId`
    con evidencia del entorno antes de abrir acceso al piloto.
 
-Los endpoints de backend están en implementación; su disponibilidad,
-autenticación, límites y comportamiento de salud aún deben verificarse en el
-artefacto candidato. El servicio local de `docker-compose.yml` es solo para desarrollo: publica un
-puerto configurable y monta un volumen persistente. No es una topología de
-producción ni un procedimiento para conectar una aplicación externa.
+Los endpoints de backend están implementados y verificados en el POC local
+(`docs/poc-local.md`); su autenticación, límites y comportamiento de salud en un
+artefacto candidato publicado aún deben verificarse. El servicio `app` del perfil
+`poc` en `docker-compose.yml` es solo para desarrollo: publica un puerto
+configurable en `127.0.0.1` y monta el modelo en solo lectura. No es una
+topología de producción ni un procedimiento para conectar una aplicación externa.
 
 ## D2-17 — Medición sin cambios de esquema
 
@@ -134,6 +137,7 @@ No se restauró ningún backup durante esta tarea.
 - [ ] Smoke tests de datos, chat y PDF contra la URL final, coordinados con
       Dev 1; registrar URL, commit, corte y resultados no sensibles.
 
-Esta tarea no marca esos criterios como completados. No hubo acceso a
-credenciales/entorno, pruebas contra servicios, despliegue, cambios de BD ni
-pruebas de restauración.
+Esta tarea no marca esos criterios como completados. Las verificaciones de
+`docs/poc-local.md` son implementación local, no tachan estos checks. No hubo
+acceso a credenciales/entorno, pruebas contra servicios, despliegue, cambios de
+BD ni pruebas de restauración.

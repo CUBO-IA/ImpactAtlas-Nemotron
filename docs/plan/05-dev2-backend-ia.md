@@ -4,6 +4,8 @@
 
 **Estimación total:** 168 h individuales + 24 h compartidas = **192 h**. Reserva orientativa: 48 h durante las seis fases. En la tabla, S1–S6 identifican las fases 1–6, sin duración semanal.
 
+**Estado informativo al 2026-11-22 (no modifica criterios ni checks):** hoy existen `Dockerfile` y el perfil `poc` de `docker-compose.yml` con el servicio `app` en `127.0.0.1`; `docs/poc-local.md` registra APIs, chat y PDF verificados en local. Eso es implementación local, no aceptación de D2-16…D2-18 ni de I-05/I-06: HTTPS, acceso del piloto, rate limit, rol `SELECT`, medición y rollback siguen pendientes en un candidato desplegado. La búsqueda semántica sigue desactivada y no se activó en esta tarea (faltan procedencia y validación de relevancia de los embeddings). La validación nueva de chat en lenguaje natural está en curso en el hilo principal y no cierra D2-12 por aquí.
+
 ## 1. Issues listos para crear
 
 Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias y entregable. Adjuntar al issue los criterios del mismo ID y la definición de cierre del [README](./README.md).
@@ -169,7 +171,7 @@ Cada fila proporciona título, prioridad, fase, esfuerzo estimado, dependencias 
 
 ## 3. Checklist de seguimiento
 
-Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`.
+Marcar cada ID solo al cerrar su issue; añadir `— PR: …; evidencia: …`. Los checks permanecen sin marcar: esta tarea no ejecutó pruebas ni accedió a un entorno candidato.
 
 - [ ] D2-01 — Auditoría.
 - [ ] D2-02 — Acceso y compatibilidad Prisma.
